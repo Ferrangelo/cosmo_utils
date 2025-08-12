@@ -169,33 +169,10 @@ class Cosmology:
 
         return _d_dz_growth_factor_impl(z_input, self.Omega_m)
 
-    def growth_rate(self, z_input, norm="0"):
-        z = jnp.asarray(z_input)
+    def growth_rate(self, z_input):
+        
+        return _growth_rate_impl(z_input, self.Omega_m)
 
-        def D_func(z_val):
-            return self.growth_factor(z_val, norm)
-
-        # Handle scalar vs array input
-        if z.ndim == 0:
-            # Scalar input
-            D_z = D_func(z)
-            dD_dz = jax.grad(D_func)(z)
-            return -(1 + z) * dD_dz / D_z
-        else:
-            # Array input - vectorize the computation
-            def compute_single_growth_rate(z_single):
-                D_single = D_func(z_single)
-                dD_dz_single = jax.grad(D_func)(z_single)
-                return -(1 + z_single) * dD_dz_single / D_single
-
-            return jax.vmap(compute_single_growth_rate)(z)
-
-    @jax.jit
-    def growth_rate_jit(self, z_input, norm="0"):
-        """
-        JIT-compiled version for better performance
-        """
-        return self.growth_rate_jax(z_input, norm)
 
     def volume_zbin(
         self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None
@@ -272,8 +249,15 @@ def _d_dz_growth_factor_impl(z_input, Om):
 
     return dDz_dz
 
+def _growth_rate_impl(z_input, Om):
+    z = np.asarray(z_input)
+    a = 1 / (1 + z)
+    Dz = _growth_factor_impl(z, Om)
+    d_dz_Dz = _d_dz_growth_factor_impl(z, Om)
+    return - d_dz_Dz / (a * Dz)
 
-def growth_factor(z, Om=0.31):
+
+def growth_factor(z, Om):
     return _growth_factor_impl(z, Om)
 
 
@@ -293,6 +277,9 @@ def d_dz_growth_factor(z_input, Om):
     """
 
     return _d_dz_growth_factor_impl(z_input, Om)
+
+def growth_rate(z_input, Om):
+    return _growth_rate_impl(z_input, Om)
 
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
