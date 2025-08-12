@@ -101,13 +101,13 @@ class Cosmology:
         z = np.asarray(z)
         if z.ndim == 0:
             integral = integrate.quad(
-                lambda x: 1.0 / self.E_correct(x), 0.0, z, points=50000
+                lambda x: 1.0 / self.E_correct(x), 0.0, z
             )[0]
         else:
             integral = np.array(
                 [
                     integrate.quad(
-                        lambda x: 1.0 / self.E_correct(x), 0.0, z_i, points=50000
+                        lambda x: 1.0 / self.E_correct(x), 0.0, z_i
                     )[0]
                     for z_i in z
                 ]
@@ -120,7 +120,7 @@ class Cosmology:
             h = self.h
         Dh = SPEED_OF_LIGHT * 0.01 / h
         integral = integrate.quad(
-            lambda x: 1.0 / self.E_late_times(x), 0.0, z, points=10000
+            lambda x: 1.0 / self.E_late_times(x), 0.0, z
         )
         return Dh * integral[0]
 
@@ -307,12 +307,16 @@ def change_sigma8(k, P, sigma8_wanted):
         * integrate.simpson(new_P / (2 * np.pi) ** 3 * filt(k, 8) ** 2 * k**2, k)
     )
 
-    np.isclose(sigma8_computed, sigma8_wanted)
-
-    return new_P
-
+    if not np.isclose(sigma8_computed, sigma8_wanted, rtol=1e-3):
+        raise ValueError(
+            f"sigma8_computed ({sigma8_computed}) does not match sigma8_wanted ({sigma8_wanted})"
+        )
 
 def bacco_params(cosmo_dict, expfactor=1):
+    """
+    Returns a dictionary of cosmological parameters for BACCO.
+    omega_cold is the total cold matter (Baryons + Cold Dark Matter).
+    """
     bacco_dict = {
         "omega_cold": cosmo_dict["Omega_m"],
         "sigma8_cold": cosmo_dict["sigma8"],
