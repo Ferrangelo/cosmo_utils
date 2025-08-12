@@ -325,7 +325,9 @@ class Cosmology:
         """
         return _growth_rate_impl(z_input, self.Omega_m)
 
-    def volume_zbin(self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None):
+    def volume_zbin(
+        self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None
+    ):
         """
         Calculates the comoving volume between two redshifts (zi and zf) within a specified sky area.
 
@@ -476,12 +478,9 @@ def _d_dz_growth_factor_impl(z_input, Om):
     z = np.asarray(z_input)
     a = 1 / (1 + z)
 
-    dDz_dz = (
-        -hyp2f1(1.0 / 3, 1.0, 11.0 / 6, (Om - 1) * a**3 / Om)
-        * a**2
-        / hyp2f1(1.0 / 3.0, 1.0, 11.0 / 6.0, (Om - 1) / Om)
-    )
-    -6.0 / 11 * a**5 * (Om - 1) / Om * hyp2f1(
+    dDz_dz = -hyp2f1(1.0 / 3, 1.0, 11.0 / 6, (Om - 1) * a**3 / Om) * a**2 / (
+        hyp2f1(1.0 / 3.0, 1.0, 11.0 / 6.0, (Om - 1) / Om)
+    ) - 6.0 / 11 * a**5 * (Om - 1) / Om * hyp2f1(
         4.0 / 3.0, 2.0, 17.0 / 6.0, (Om - 1) * a**3 / Om
     ) / hyp2f1(1.0 / 3.0, 1.0, 11.0 / 6.0, (Om - 1) / Om)
 
@@ -588,6 +587,7 @@ def change_sigma8(k, P, sigma8_wanted):
     ValueError
         If the computed sigma8 from the rescaled power spectrum does not match `sigma8_wanted` within a relative tolerance of 1e-3.
     """
+
     def filt(q, R):
         return 3.0 * (np.sin(q * R) - q * R * np.cos(q * R)) / (q * R) ** 3
 
@@ -606,7 +606,7 @@ def change_sigma8(k, P, sigma8_wanted):
         raise ValueError(
             f"sigma8_computed ({sigma8_computed}) does not match sigma8_wanted ({sigma8_wanted})"
         )
-        
+
     return new_P
 
 
