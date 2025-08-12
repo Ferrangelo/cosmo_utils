@@ -136,21 +136,50 @@ class Cosmology:
         distance_cubic_interp = interpolate.interp1d(z_vals, dist_vals, kind="cubic")
         return distance_cubic_interp
 
-    def growth_factor(self, z_input, norm="0"):
+    def growth_factor(self, z_input):
+        """
+        Compute the linear growth factor D(z) for a given redshift z.
+        It is normalized today: D(z=0) = 1.
+
+        Parameters
+        ----------
+        z_input : float or array-like
+            Redshift(s) at which to compute the growth factor.
+
+        Returns
+        -------
+        D : float or array-like
+            The growth factor evaluated at the input redshift(s).
+        """
+
         z = jnp.asarray(z_input)
         a = 1 / (1 + z)
-        if norm == "MD":
-            return hyp2f1(1 / 3, 1, 11 / 6, (self.Omega_m - 1) * a**3 / (self.Omega_m))
-        elif norm == "0":
-            return (
-                a
+        return (a
                 * hyp2f1(1 / 3, 1, 11 / 6, (self.Omega_m - 1) * a**3 / self.Omega_m)
                 / hyp2f1(1 / 3, 1, 11 / 6, (self.Omega_m - 1) / self.Omega_m)
-            )
-        else:
-            raise ValueError("unknown norm type")
+        )
+    
+    def d_dz_grwth_factor(self, z_input):
+        """
+        Computes the derivative of the linear growth factor D(z) with respect to redshift z.
+        Parameters
+        ----------
+        z_input : float or array-like
+            Redshift(s) at which to evaluate the derivative of the growth factor.
+        Returns
+        -------
+        dDz_dz : float or ndarray
+            The derivative of the linear growth factor D(z) with respect to z, evaluated at the input redshift(s).
+        """
         
+        z = np.asarray(z_input)
+        a = 1 / (1 + z)
+
+        dDz_dz = - hyp2f1(1./3, 1., 11./6, (self.Omega_m - 1) * a**3 / self.Omega_m) * a**2 / hyp2f1(1./3., 1., 11./6., (self.Omega_m - 1) / self.Omega_m)
+        - 6. / 11 * a**5 * (self.Omega_m - 1) / self.Omega_m * hyp2f1(4./3., 2., 17./6., (self.Omega_m - 1) * a**3 / self.Omega_m) / hyp2f1(1./3., 1., 11./6., (self.Omega_m - 1) / self.Omega_m)
         
+        return dDz_dz
+
     def growth_rate(self, z_input, norm = "0"):
         z = jnp.asarray(z_input)
 
