@@ -1,14 +1,8 @@
-import copy
 import json
 import os
 import re
 import socket
 from pathlib import Path
-
-import numpy as np
-import polars as pl
-from matplotlib import pyplot as plt
-from scipy.spatial.transform import Rotation
 
 SPEED_OF_LIGHT = 299_792.458  # km/s
 
@@ -242,13 +236,18 @@ def extract_z_range(filename):
 
     return zmin, zmax
 
-def _extract_x_key(filename):
+def _extract_x_key(filename, zkey=None):
+    """Extract key like 'x10', 'x20' from filename."""
+    match = re.search(r'x(\d+)', filename)
+    return f"x{match.group(1)}" if match else None
+
+def _extract_x_key_tmp(filename):
     """Extract key like 'x10', 'x20' from filename."""
     match = re.search(r'x(\d+)', filename)
     return f"x{match.group(1)}" if match else None
 
 
-def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None):
+def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None, zkey="zrsd"):
     """
     Load JSON file paths into a dictionary with dynamic keys.
 
@@ -282,8 +281,50 @@ def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None):
 
         # Check if file matches pattern
         if re.match(pattern, filename):
+            key = key_extractor(filename, zkey=None)
+            if key:
+                jsons[key] = str(file_path)
+
+    return jsons
+
+
+def load_jsons_from_dir_tmp(json_dir, pattern=None, key_extractor=None):
+    """
+    Load JSON file paths into a dictionary with dynamic keys.
+
+    Parameters:
+    -----------
+    json_dir : str
+        Directory containing JSON files
+    pattern : str, optional
+        Regex pattern to filter files (default: matches files with x followed by numbers)
+    key_extractor : callable, optional
+        Function to extract key from filename (default: extracts 'x10', 'x20', etc.)
+
+    Returns:
+    --------
+    dict : Dictionary with extracted keys and full file paths
+    """
+
+    # Default pattern to match files like 'narrow_z0_0.9_1.1_x10.json'
+    if pattern is None:
+        pattern = r".*x(\d+)\.json$"
+
+    # Default key extractor to get 'x10', 'x20', etc.
+    if key_extractor is None:
+        key_extractor = _extract_x_key_tmp
+
+    jsons = {}
+    json_dir = Path(json_dir)
+
+    for file_path in json_dir.glob("*.json"):
+        filename = file_path.name
+
+        # Check if file matches pattern
+        if re.match(pattern, filename):
             key = key_extractor(filename)
             if key:
                 jsons[key] = str(file_path)
 
     return jsons
+
