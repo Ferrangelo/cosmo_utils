@@ -3,8 +3,8 @@ from pathlib import Path
 
 import jax
 import jax.numpy as jnp
-from jax.scipy.special import hyp2f1
 import numpy as np
+from jax.scipy.special import hyp2f1
 from scipy import integrate, interpolate
 
 # from scipy.special import hyp2f1
@@ -152,14 +152,9 @@ class Cosmology:
             The growth factor evaluated at the input redshift(s).
         """
 
-        z = jnp.asarray(z_input)
-        a = 1 / (1 + z)
-        return (a
-                * hyp2f1(1 / 3, 1, 11 / 6, (self.Omega_m - 1) * a**3 / self.Omega_m)
-                / hyp2f1(1 / 3, 1, 11 / 6, (self.Omega_m - 1) / self.Omega_m)
-        )
-    
-    def d_dz_grwth_factor(self, z_input):
+        return _growth_factor_impl(z_input, self.Omega_m)
+
+    def d_dz_growth_factor(self, z_input):
         """
         Computes the derivative of the linear growth factor D(z) with respect to redshift z.
         Parameters
@@ -171,21 +166,15 @@ class Cosmology:
         dDz_dz : float or ndarray
             The derivative of the linear growth factor D(z) with respect to z, evaluated at the input redshift(s).
         """
-        
-        z = np.asarray(z_input)
-        a = 1 / (1 + z)
 
-        dDz_dz = - hyp2f1(1./3, 1., 11./6, (self.Omega_m - 1) * a**3 / self.Omega_m) * a**2 / hyp2f1(1./3., 1., 11./6., (self.Omega_m - 1) / self.Omega_m)
-        - 6. / 11 * a**5 * (self.Omega_m - 1) / self.Omega_m * hyp2f1(4./3., 2., 17./6., (self.Omega_m - 1) * a**3 / self.Omega_m) / hyp2f1(1./3., 1., 11./6., (self.Omega_m - 1) / self.Omega_m)
-        
-        return dDz_dz
+        return _d_dz_growth_factor_impl(z_input, self.Omega_m)
 
-    def growth_rate(self, z_input, norm = "0"):
+    def growth_rate(self, z_input, norm="0"):
         z = jnp.asarray(z_input)
 
         def D_func(z_val):
             return self.growth_factor(z_val, norm)
-        
+
         # Handle scalar vs array input
         if z.ndim == 0:
             # Scalar input
@@ -198,9 +187,8 @@ class Cosmology:
                 D_single = D_func(z_single)
                 dD_dz_single = jax.grad(D_func)(z_single)
                 return -(1 + z_single) * dD_dz_single / D_single
-            
+
             return jax.vmap(compute_single_growth_rate)(z)
-        
 
     @jax.jit
     def growth_rate_jit(self, z_input, norm="0"):
@@ -208,10 +196,6 @@ class Cosmology:
         JIT-compiled version for better performance
         """
         return self.growth_rate_jax(z_input, norm)
-    
-
-
-
 
     def volume_zbin(
         self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None
@@ -251,19 +235,64 @@ class Cosmology:
         )[0]
 
 
-def growth_factor(z, Om=0.31, norm="0"):
+def _growth_factor_impl(z, Om):
     z = np.asarray(z)
     a = 1 / (1 + z)
-    if norm == "MD":
-        return hyp2f1(1 / 3, 1, 11 / 6, (Om - 1) * a**3 / (Om))
-    elif norm == "0":
-        return (
-            a
-            * hyp2f1(1 / 3, 1, 11 / 6, (Om - 1) * a**3 / Om)
-            / hyp2f1(1 / 3, 1, 11 / 6, (Om - 1) / Om)
-        )
-    else:
-        raise ValueError("unknown norm type")
+    return (
+        a
+        * hyp2f1(1 / 3, 1, 11 / 6, (Om - 1) * a**3 / Om)
+        / hyp2f1(1 / 3, 1, 11 / 6, (Om - 1) / Om)
+    )
+
+
+def _d_dz_growth_factor_impl(z_input, Om):
+    """
+    Computes the derivative of the linear growth factor D(z) with respect to redshift z.
+    Parameters
+    ----------
+    z_input : float or array-like
+    Redshift(s) at which to evaluate the derivative of the growth factor.
+    Returns
+    -------
+    dDz_dz : float or ndarray
+    The derivative of the linear growth factor D(z) with respect to z, evaluated at the input redshift(s).
+    """
+
+    z = np.asarray(z_input)
+    a = 1 / (1 + z)
+
+    dDz_dz = (
+        -hyp2f1(1.0 / 3, 1.0, 11.0 / 6, (Om - 1) * a**3 / Om)
+        * a**2
+        / hyp2f1(1.0 / 3.0, 1.0, 11.0 / 6.0, (Om - 1) / Om)
+    )
+    -6.0 / 11 * a**5 * (Om - 1) / Om * hyp2f1(
+        4.0 / 3.0, 2.0, 17.0 / 6.0, (Om - 1) * a**3 / Om
+    ) / hyp2f1(1.0 / 3.0, 1.0, 11.0 / 6.0, (Om - 1) / Om)
+
+    return dDz_dz
+
+
+def growth_factor(z, Om=0.31):
+    return _growth_factor_impl(z, Om)
+
+
+def d_dz_growth_factor(z_input, Om):
+    """
+    Computes the derivative of the linear growth factor D(z) with respect to redshift z.
+    Parameters
+    ----------
+    z_input : float or array-like
+        Redshift(s) at which to evaluate the derivative of the growth factor.
+    Om : float, optional
+        Matter density parameter, default is 0.31.
+    Returns
+    -------
+    dDz_dz : float or ndarray
+        The derivative of the linear growth factor D(z) with respect to z, evaluated at the input redshift(s).
+    """
+
+    return _d_dz_growth_factor_impl(z_input, Om)
 
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
