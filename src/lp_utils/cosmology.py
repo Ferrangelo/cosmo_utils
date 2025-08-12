@@ -563,6 +563,29 @@ def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
     rr = rr_of_s / (Nr * (Nr - 1))
     return (dd - 2 * dr) / rr + 1
 
+    def xi_natural(N, Nr, dd_of_s, dr_of_s, rr_of_s):
+        """
+        Calculates the natural estimator for the two-point correlation function.
+
+        Parameters
+        ----------
+        N : int
+            Number of data points in the sample.
+        Nr : int
+            Number of random points in the sample.
+        dd_of_s : array-like or float
+            Number of data-data pairs as a function of separation s.
+        rr_of_s : array-like or float
+            Number of random-random pairs as a function of separation s.
+
+        Returns
+        -------
+        float or array-like
+            The natural estimator value(s) for the two-point correlation function.
+        """
+        dd = dd_of_s / (N * (N - 1))
+        rr = rr_of_s / (Nr * (Nr - 1))
+        return dd / rr - 1
 
 def change_sigma8(k, P, sigma8_wanted):
     """
