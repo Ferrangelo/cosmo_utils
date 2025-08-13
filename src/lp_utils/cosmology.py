@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import integrate, interpolate
+from scipy.integrate import quad
 
-from scipy.special import hyp2f1
+from scipy.special import hyp2f1, spherical_jn
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json
@@ -245,13 +246,10 @@ class Cosmology:
         Dh = SPEED_OF_LIGHT * 0.01 / h
         z = np.asarray(z)
         if z.ndim == 0:
-            integral = integrate.quad(lambda x: 1.0 / self.E_correct(x), 0.0, z)[0]
+            integral = quad(lambda x: 1.0 / self.E_correct(x), 0.0, z)[0]
         else:
             integral = np.array(
-                [
-                    integrate.quad(lambda x: 1.0 / self.E_correct(x), 0.0, z_i)[0]
-                    for z_i in z
-                ]
+                [quad(lambda x: 1.0 / self.E_correct(x), 0.0, z_i)[0] for z_i in z]
             )
         return Dh * integral
 
@@ -275,7 +273,7 @@ class Cosmology:
         if not h_units:
             h = self.h
         Dh = SPEED_OF_LIGHT * 0.01 / h
-        integral = integrate.quad(lambda x: 1.0 / self.E_late_times(x), 0.0, z)
+        integral = quad(lambda x: 1.0 / self.E_late_times(x), 0.0, z)
         return Dh * integral[0]
 
     def comoving_distance_interp(self, use_late_times=False, z_vals=None):
@@ -563,29 +561,31 @@ def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
     rr = rr_of_s / (Nr * (Nr - 1))
     return (dd - 2 * dr) / rr + 1
 
-    def xi_natural(N, Nr, dd_of_s, dr_of_s, rr_of_s):
-        """
-        Calculates the natural estimator for the two-point correlation function.
 
-        Parameters
-        ----------
-        N : int
-            Number of data points in the sample.
-        Nr : int
-            Number of random points in the sample.
-        dd_of_s : array-like or float
-            Number of data-data pairs as a function of separation s.
-        rr_of_s : array-like or float
-            Number of random-random pairs as a function of separation s.
+def xi_natural(N, Nr, dd_of_s, dr_of_s, rr_of_s):
+    """
+    Calculates the natural estimator for the two-point correlation function.
 
-        Returns
-        -------
-        float or array-like
-            The natural estimator value(s) for the two-point correlation function.
-        """
-        dd = dd_of_s / (N * (N - 1))
-        rr = rr_of_s / (Nr * (Nr - 1))
-        return dd / rr - 1
+    Parameters
+    ----------
+    N : int
+        Number of data points in the sample.
+    Nr : int
+        Number of random points in the sample.
+    dd_of_s : array-like or float
+        Number of data-data pairs as a function of separation s.
+    rr_of_s : array-like or float
+        Number of random-random pairs as a function of separation s.
+
+    Returns
+    -------
+    float or array-like
+        The natural estimator value(s) for the two-point correlation function.
+    """
+    dd = dd_of_s / (N * (N - 1))
+    rr = rr_of_s / (Nr * (Nr - 1))
+    return dd / rr - 1
+
 
 def change_sigma8(k, P, sigma8_wanted):
     """
@@ -610,27 +610,61 @@ def change_sigma8(k, P, sigma8_wanted):
     ValueError
         If the computed sigma8 from the rescaled power spectrum does not match `sigma8_wanted` within a relative tolerance of 1e-3.
     """
-
-    def filt(q, R):
-        return 3.0 * (np.sin(q * R) - q * R * np.cos(q * R)) / (q * R) ** 3
-
-    integrand = P / (2.0 * np.pi) ** 3 * filt(k, 8) ** 2 * k**2
-    sigma8_old = np.sqrt(4.0 * np.pi * integrate.simpson(integrand, k))
-
+    sigma8_old = compute_sigma8(k, P)
     new_P = P * (sigma8_wanted / sigma8_old) ** 2
+    sigma8_computed = compute_sigma8(k, new_P)
 
-    sigma8_computed = np.sqrt(
-        4.0
-        * np.pi
-        * integrate.simpson(new_P / (2 * np.pi) ** 3 * filt(k, 8) ** 2 * k**2, k)
-    )
-
-    if not np.isclose(sigma8_computed, sigma8_wanted, rtol=1e-3):
+    if not np.isclose(sigma8_computed, sigma8_wanted, rtol=1e-5):
         raise ValueError(
             f"sigma8_computed ({sigma8_computed}) does not match sigma8_wanted ({sigma8_wanted})"
         )
 
     return new_P
+
+
+def compute_sigma8(k, P_arr):
+    P_interp = interpolate.interp1d(
+        k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0
+    )
+
+    def integrand(k_):
+        return P_interp(k_) / (2.0 * np.pi) ** 3 * top_hat_filter(k_, 8) ** 2 * k_**2
+
+    integral, _ = quad(integrand, 0.000001, 5, epsabs=0, epsrel=1e-8, limit=200)
+    return np.sqrt(4.0 * np.pi * integral)
+
+
+def compute_sigma_v(k, P):
+    P_interp = interpolate.interp1d(
+        k, P, kind="cubic", bounds_error=False, fill_value=0.0
+    )
+
+    def integrand(k):
+        return P_interp(k) / (2.0 * np.pi) ** 3
+
+    integral, _ = quad(integrand, 0.001, 5, epsabs=0, epsrel=1e-8, limit=200)
+    return np.sqrt(4.0 * np.pi / 3.0 * integral)
+
+
+def top_hat_filter(k, R):
+    """
+    Computes the top-hat filter in Fourier space.
+    It uses the spherical Bessel function of the first kind to compute the filter.
+
+    Parameters
+    ----------
+    k : array_like
+        Array of wavenumbers.
+    R : float
+        Radius of the top-hat filter.
+
+    Returns
+    -------
+    f : array_like
+        The top-hat filter values corresponding to the input wavenumbers `k`.
+    """
+    x = k * R
+    return 3 * spherical_jn(1, x) / x if np.all(x != 0) else 1.0
 
 
 def bacco_params(cosmo_dict, expfactor=1):
