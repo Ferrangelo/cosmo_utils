@@ -43,7 +43,7 @@ def filter_catalog(
     zmin=None,
     zmax=None,
     zkey=None,
-    angle_filter=True
+    angle_filter=True,
 ):
     if not narrow:
         return df.filter(pl.col("z0").is_between(0.05, 0.465))
@@ -265,7 +265,9 @@ def write_df_final_output(df_final, output_path, test_output_path):
     print(f"Writing test output in {test_output_path}")
     nsample = int(100000)
     if df_final.height > nsample:
-        df_final.sample(n=100000, with_replacement=False).write_parquet(test_output_path)
+        df_final.sample(n=100000, with_replacement=False).write_parquet(
+            test_output_path
+        )
     else:
         df_final.write_parquet(test_output_path)
 
@@ -327,3 +329,9 @@ def read_test_file_and_plot(filepath):
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
+
+
+if __name__ == "__main__":
+    print(
+        "This module provides utilities to work with catalogs and is not intended to be run directly."
+    )

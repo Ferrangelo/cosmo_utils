@@ -8,7 +8,7 @@ from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json
-from lp.utils.filters_et_functions import (top_hat_filter, wgc, j0)
+from lp.utils.filters_et_functions import top_hat_filter, wgc, j0
 
 
 class Cosmology:
@@ -432,7 +432,7 @@ class Cosmology:
             - volume_target,
             (z_max + z_min) / 2,
         )[0]
-        
+
 
 def bacco_params(cosmo_dict, expfactor=1):
     """
@@ -452,7 +452,6 @@ def bacco_params(cosmo_dict, expfactor=1):
     }
 
     return bacco_dict
-
 
 
 def _growth_factor_impl(z, Om):
@@ -594,9 +593,7 @@ def change_sigma8(k, P, sigma8_wanted):
 
 
 def compute_sigma8(k, P_arr):
-    P_interp = interp1d(
-        k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0
-    )
+    P_interp = interp1d(k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0)
 
     def integrand(k_):
         return P_interp(k_) / (2.0 * np.pi) ** 3 * top_hat_filter(k_, 8) ** 2 * k_**2
@@ -606,9 +603,7 @@ def compute_sigma8(k, P_arr):
 
 
 def compute_sigma_v(k, P):
-    P_interp = interp1d(
-        k, P, kind="cubic", bounds_error=False, fill_value=0.0
-    )
+    P_interp = interp1d(k, P, kind="cubic", bounds_error=False, fill_value=0.0)
 
     def integrand(k):
         return P_interp(k) / (2.0 * np.pi) ** 3
@@ -619,13 +614,15 @@ def compute_sigma_v(k, P):
 
 def Pk2xi(k, Pk, s_arr):
     def integrand(x, Px, r, xpiv=1):
-        return x**2 * Px /(2. * np.pi)**3 * j0(x * r) * wgc(x, xpiv, 4) * 4 *np.pi
+        return x**2 * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4) * 4 * np.pi
+
     s_arr = np.asarray(s_arr)
     xi = []
     for si in s_arr:
         xi.append(integrate.simpson(integrand(k, Pk, si), k))
     xi = np.array(xi)
     return xi
+
 
 def Pk2xi_mcfit(k, Pk, s_arr):
     s_mc, xi_mc_result = mcfit.P2xi(k, lowring=True)(Pk, extrap=True)
@@ -686,3 +683,8 @@ def xi_natural(N, Nr, dd_of_s, rr_of_s):
     rr = rr_of_s / (Nr * (Nr - 1))
     return dd / rr - 1
 
+
+if __name__ == "__main__":
+    print(
+        "This module provides cosmology utilities and is not intended to be run directly."
+    )

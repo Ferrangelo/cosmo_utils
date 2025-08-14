@@ -138,3 +138,9 @@ def dj0(x):
     mask = x != 0
     result[mask] = deriv_spherical_bessel_j(0, x[mask])
     return result
+
+
+if __name__ == "__main__":
+    print(
+        "This module provides filter and special function utilities and is not intended to be run directly."
+    )

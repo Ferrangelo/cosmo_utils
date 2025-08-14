@@ -236,14 +236,16 @@ def extract_z_range(filename):
 
     return zmin, zmax
 
+
 def _extract_x_key(filename, zkey=None):
     """Extract key like 'x10', 'x20' from filename."""
-    match = re.search(r'x(\d+)', filename)
+    match = re.search(r"x(\d+)", filename)
     return f"x{match.group(1)}" if match else None
+
 
 def _extract_x_key_tmp(filename):
     """Extract key like 'x10', 'x20' from filename."""
-    match = re.search(r'x(\d+)', filename)
+    match = re.search(r"x(\d+)", filename)
     return f"x{match.group(1)}" if match else None
 
 
@@ -328,3 +330,10 @@ def load_jsons_from_dir_tmp(json_dir, pattern=None, key_extractor=None):
 
     return jsons
 
+
+# ...existing code...
+
+if __name__ == "__main__":
+    print(
+        "This module provides utilities for handling cosmology and Corrfunc files and is not intended to be run directly."
+    )
