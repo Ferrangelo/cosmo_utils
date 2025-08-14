@@ -1,11 +1,14 @@
 import numpy as np
-from scipy import integrate, interpolate
+from scipy import integrate
+from scipy.interpolate import interp1d
 from scipy.integrate import quad
+import mcfit
 
-from scipy.special import hyp2f1, spherical_jn
+from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json
+from lp.utils.filters_et_functions import (top_hat_filter, wgc, j0)
 
 
 class Cosmology:
@@ -302,7 +305,7 @@ class Cosmology:
             else self.comoving_distance
         )
         dist_vals = np.array([distance_func(z) for z in z_vals])
-        distance_cubic_interp = interpolate.interp1d(z_vals, dist_vals, kind="cubic")
+        distance_cubic_interp = interp1d(z_vals, dist_vals, kind="cubic")
         return distance_cubic_interp
 
     def growth_factor(self, z_input):
@@ -397,7 +400,7 @@ class Cosmology:
             [self.volume_zbin(zmin, zmax, fsky) for zmax in z_vals]
         )  # Calculate volumes
 
-        volume_interp = interpolate.interp1d(z_vals, vol_grid, kind="cubic")
+        volume_interp = interp1d(z_vals, vol_grid, kind="cubic")
         return volume_interp
 
     def find_z_for_target_volume(
@@ -429,6 +432,27 @@ class Cosmology:
             - volume_target,
             (z_max + z_min) / 2,
         )[0]
+        
+
+def bacco_params(cosmo_dict, expfactor=1):
+    """
+    Returns a dictionary of cosmological parameters for BACCO.
+    omega_cold is the total cold matter (Baryons + Cold Dark Matter).
+    """
+    bacco_dict = {
+        "omega_cold": cosmo_dict["Omega_m"],
+        "sigma8_cold": cosmo_dict["sigma8"],
+        "omega_baryon": cosmo_dict["Omega_b"],
+        "ns": cosmo_dict["n_s"],
+        "hubble": cosmo_dict["h"],
+        "neutrino_mass": cosmo_dict.get("m_nu", 0),
+        "w0": cosmo_dict.get("w0", -1.0),
+        "wa": cosmo_dict.get("wa", 0.0),
+        "expfactor": expfactor,
+    }
+
+    return bacco_dict
+
 
 
 def _growth_factor_impl(z, Om):
@@ -534,59 +558,6 @@ def growth_rate(z_input, Om):
     return _growth_rate_impl(z_input, Om)
 
 
-def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
-    """
-    Calculates the Landy-Szalay estimator for the two-point correlation function.
-
-    Parameters
-    ----------
-    N : int
-        Number of data points in the sample.
-    Nr : int
-        Number of random points in the sample.
-    dd_of_s : array-like or float
-        Number of data-data pairs as a function of separation s.
-    dr_of_s : array-like or float
-        Number of data-random pairs as a function of separation s.
-    rr_of_s : array-like or float
-        Number of random-random pairs as a function of separation s.
-
-    Returns
-    -------
-    float or array-like
-        The Landy-Szalay estimator value(s) for the two-point correlation function.
-    """
-    dd = dd_of_s / (N * (N - 1))
-    dr = dr_of_s / (N * Nr)
-    rr = rr_of_s / (Nr * (Nr - 1))
-    return (dd - 2 * dr) / rr + 1
-
-
-def xi_natural(N, Nr, dd_of_s, dr_of_s, rr_of_s):
-    """
-    Calculates the natural estimator for the two-point correlation function.
-
-    Parameters
-    ----------
-    N : int
-        Number of data points in the sample.
-    Nr : int
-        Number of random points in the sample.
-    dd_of_s : array-like or float
-        Number of data-data pairs as a function of separation s.
-    rr_of_s : array-like or float
-        Number of random-random pairs as a function of separation s.
-
-    Returns
-    -------
-    float or array-like
-        The natural estimator value(s) for the two-point correlation function.
-    """
-    dd = dd_of_s / (N * (N - 1))
-    rr = rr_of_s / (Nr * (Nr - 1))
-    return dd / rr - 1
-
-
 def change_sigma8(k, P, sigma8_wanted):
     """
     Rescales the input power spectrum `P` so that the resulting spectrum yields the desired value of sigma8.
@@ -623,7 +594,7 @@ def change_sigma8(k, P, sigma8_wanted):
 
 
 def compute_sigma8(k, P_arr):
-    P_interp = interpolate.interp1d(
+    P_interp = interp1d(
         k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0
     )
 
@@ -635,7 +606,7 @@ def compute_sigma8(k, P_arr):
 
 
 def compute_sigma_v(k, P):
-    P_interp = interpolate.interp1d(
+    P_interp = interp1d(
         k, P, kind="cubic", bounds_error=False, fill_value=0.0
     )
 
@@ -646,42 +617,72 @@ def compute_sigma_v(k, P):
     return np.sqrt(4.0 * np.pi / 3.0 * integral)
 
 
-def top_hat_filter(k, R):
+def Pk2xi(k, Pk, s_arr):
+    def integrand(x, Px, r, xpiv=1):
+        return x**2 * Px /(2. * np.pi)**3 * j0(x * r) * wgc(x, xpiv, 4) * 4 *np.pi
+    s_arr = np.asarray(s_arr)
+    xi = []
+    for si in s_arr:
+        xi.append(integrate.simpson(integrand(k, Pk, si), k))
+    xi = np.array(xi)
+    return xi
+
+def Pk2xi_mcfit(k, Pk, s_arr):
+    s_mc, xi_mc_result = mcfit.P2xi(k, lowring=True)(Pk, extrap=True)
+    xi_intp = interp1d(s_mc, xi_mc_result, kind="cubic")
+    xi = xi_intp(s_arr)
+    return xi
+
+
+def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
     """
-    Computes the top-hat filter in Fourier space.
-    It uses the spherical Bessel function of the first kind to compute the filter.
+    Calculates the Landy-Szalay estimator for the two-point correlation function.
 
     Parameters
     ----------
-    k : array_like
-        Array of wavenumbers.
-    R : float
-        Radius of the top-hat filter.
+    N : int
+        Number of data points in the sample.
+    Nr : int
+        Number of random points in the sample.
+    dd_of_s : array-like or float
+        Number of data-data pairs as a function of separation s.
+    dr_of_s : array-like or float
+        Number of data-random pairs as a function of separation s.
+    rr_of_s : array-like or float
+        Number of random-random pairs as a function of separation s.
 
     Returns
     -------
-    f : array_like
-        The top-hat filter values corresponding to the input wavenumbers `k`.
+    float or array-like
+        The Landy-Szalay estimator value(s) for the two-point correlation function.
     """
-    x = k * R
-    return 3 * spherical_jn(1, x) / x if np.all(x != 0) else 1.0
+    dd = dd_of_s / (N * (N - 1))
+    dr = dr_of_s / (N * Nr)
+    rr = rr_of_s / (Nr * (Nr - 1))
+    return (dd - 2 * dr) / rr + 1
 
 
-def bacco_params(cosmo_dict, expfactor=1):
+def xi_natural(N, Nr, dd_of_s, rr_of_s):
     """
-    Returns a dictionary of cosmological parameters for BACCO.
-    omega_cold is the total cold matter (Baryons + Cold Dark Matter).
-    """
-    bacco_dict = {
-        "omega_cold": cosmo_dict["Omega_m"],
-        "sigma8_cold": cosmo_dict["sigma8"],
-        "omega_baryon": cosmo_dict["Omega_b"],
-        "ns": cosmo_dict["n_s"],
-        "hubble": cosmo_dict["h"],
-        "neutrino_mass": cosmo_dict.get("m_nu", 0),
-        "w0": cosmo_dict.get("w0", -1.0),
-        "wa": cosmo_dict.get("wa", 0.0),
-        "expfactor": expfactor,
-    }
+    Calculates the natural estimator for the two-point correlation function.
 
-    return bacco_dict
+    Parameters
+    ----------
+    N : int
+        Number of data points in the sample.
+    Nr : int
+        Number of random points in the sample.
+    dd_of_s : array-like or float
+        Number of data-data pairs as a function of separation s.
+    rr_of_s : array-like or float
+        Number of random-random pairs as a function of separation s.
+
+    Returns
+    -------
+    float or array-like
+        The natural estimator value(s) for the two-point correlation function.
+    """
+    dd = dd_of_s / (N * (N - 1))
+    rr = rr_of_s / (Nr * (Nr - 1))
+    return dd / rr - 1
+
