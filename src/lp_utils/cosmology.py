@@ -8,7 +8,7 @@ from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json
-from lp.utils.filters_et_functions import top_hat_filter, wgc, j0
+from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
 
 
 class Cosmology:
@@ -612,15 +612,15 @@ def compute_sigma_v(k, P):
     return np.sqrt(4.0 * np.pi / 3.0 * integral)
 
 
-def Pk2xi(k, Pk, s_arr):
+def Pk2xi(k, Pk, s_arr, z=0, Om=0.3):
     def integrand(x, Px, r, xpiv=1):
-        return x**2 * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4) * 4 * np.pi
+        return x**2 * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4)
 
     s_arr = np.asarray(s_arr)
     xi = []
     for si in s_arr:
         xi.append(integrate.simpson(integrand(k, Pk, si), k))
-    xi = np.array(xi)
+    xi = 4 * np.pi * growth_factor(z, Om) ** 2 * np.array(xi)
     return xi
 
 
@@ -629,6 +629,55 @@ def Pk2xi_mcfit(k, Pk, s_arr):
     xi_intp = interp1d(s_mc, xi_mc_result, kind="cubic")
     xi = xi_intp(s_arr)
     return xi
+
+
+def Pk2d_xi_ds(k, Pk, s_arr, z=0, Om=0.3):
+    """
+    Computes the derivative of the linear two-point correlation function xi(s) with respect to s,
+    given a power spectrum P(k) and an array of separations s.
+
+    Parameters
+    ----------
+    k : array_like
+        Wavenumbers at which the power spectrum P(k) is defined.
+    Pk : array_like
+        Power spectrum values corresponding to the wavenumbers k.
+    s_arr : array_like
+        Array of separations at which to compute the derivative of xi.
+    z : float, optional
+        Redshift at which to evaluate the growth factor (default is 0).
+    Om : float, optional
+        Matter density parameter (default is 0.3).
+
+    Returns
+    -------
+    d_xi_ds : ndarray
+        The derivative of the two-point correlation function xi(s) with respect to s.
+    """
+
+    s_arr = np.asarray(s_arr)
+
+    def integrand(x, Px_interp, r):
+        return (
+            x**2
+            * Px_interp(x)
+            / (2.0 * np.pi) ** 3
+            * d_dr_j0_of_kr(x, r)
+            * wgc(x, 1, 4)
+        )
+
+    Px_interp = interp1d(k, Pk, kind="cubic", bounds_error=False, fill_value=0.0)
+    dxi = []
+    for si in s_arr:
+        val, _ = quad(lambda x: integrand(x, Px_interp, si), 0.001, 100, limit=200)
+        dxi.append(val)
+    dxi = 4 * np.pi * growth_factor(z, Om) ** 2 * np.array(dxi)
+
+    return dxi
+
+
+def dxi_ds(k, Pk, s_arr, z=0, Om=0.3):
+    return np.gradient(Pk2xi(k, Pk, s_arr, z, Om), s_arr, edge_order=2)
 
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
