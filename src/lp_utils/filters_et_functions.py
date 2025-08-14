@@ -12,9 +12,6 @@ wgc(x, xpiv=1, n=4)
 j0(x)
     Computes the spherical Bessel function of the first kind of order 0 for the input value(s).
 
-deriv_spherical_bessel_j(n, x)
-    Computes the derivative of the spherical Bessel function of the first kind j_n(x) for the given order and input value(s).
-
 dj0(x)
     Computes the derivative of the spherical Bessel function of the first kind j_0(x) for the input value(s).
 """
@@ -86,58 +83,17 @@ def j0(x):
     return spherical_jn(0, x)
 
 
-def deriv_spherical_bessel_j(n, x):
-    """
-    Computes the derivative of the spherical Bessel function of the first kind j_n(x).
-
-    Parameters
-    ----------
-    n : int
-        Order of the spherical Bessel function.
-    x : float or array-like
-        Input value(s) at which to compute the derivative.
-
-    Returns
-    -------
-    float or ndarray
-        The derivative of the spherical Bessel function j_n(x) at the input value(s).
-    """
-    if np.any(x == 0):
-        raise ValueError(
-            "This function does not accept zero values for x. Please handle zero values separately when calling this function."
-        )
-
-    return n * spherical_jn(n, x) / x - spherical_jn(n + 1, x)
-
-
 def dj0(x):
     """
     Computes the derivative of the spherical Bessel function of the first kind j_0(x).
 
-    Parameters
-    ----------
-    x : float or array-like
-        Input value(s) at which to compute the derivative.
+    Parameters:
+        x (float or array-like): Input value(s).
 
-    Returns
-    -------
-    float or ndarray
-        The derivative of the spherical Bessel function j_0(x) at the input value(s).
-
-    Notes
-    -----
-    - Converts the input `x` to a NumPy array to ensure consistent array operations.
-    - Initializes an array `result` of zeros with the same shape as `x` to store the output.
-    - Creates a boolean mask to identify elements where `x` is not zero, since the derivative is zero at zero.
-    - Computes the derivative only for nonzero elements using `deriv_spherical_bessel_j` to avoid division by zero.
-    - Returns the resulting array, which contains the derivative values at the specified input points.
-
+    Returns:
+        float or ndarray: The derivative of the spherical Bessel function j_0 at x.
     """
-    x = np.asarray(x)
-    result = np.zeros_like(x, dtype=float)
-    mask = x != 0
-    result[mask] = deriv_spherical_bessel_j(0, x[mask])
-    return result
+    return spherical_jn(0, x, derivative=True)
 
 
 if __name__ == "__main__":
