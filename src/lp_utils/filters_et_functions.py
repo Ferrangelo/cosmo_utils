@@ -95,6 +95,19 @@ def dj0(x):
     """
     return spherical_jn(0, x, derivative=True)
 
+def d_dr_j0_of_kr(k, r):
+    """
+    Computes the derivative of the spherical Bessel function of the first kind j_0(kr) with respect to r.
+
+    Parameters:
+        k (float or array-like): Wavenumber(s).
+        r (float or array-like): Radius(es).
+
+    Returns:
+        float or ndarray: The derivative of j_0(kr) with respect to r.
+    """
+    return k * dj0(k * r)
+
 
 if __name__ == "__main__":
     print(
