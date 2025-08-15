@@ -130,21 +130,7 @@ class Cosmology:
             self.sigma8 = sigma8
             self.Pk_filename = Pk_filename
 
-        if self.Pk_filename is not None:
-            print(f"Loading power spectrum from {self.Pk_filename}")
-            self.k, self.Pk = read_pk(self.Pk_filename)
-            sigma8_computed = compute_sigma8(self.k, self.Pk)
-            if np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
-                self.P = self.Pk
-            else:
-                print(
-                    f"Warning: Computed sigma8 ({sigma8_computed}) does not match provided sigma8 ({self.sigma8}). "
-                    "Rescaling the power spectrum to match the provided sigma8."
-                )
-                self.P = change_sigma8(self.k, self.Pk, self.sigma8)
-                print("--------- After rescaling ---------")
-                print(f"sigma8 = {self.sigma8:.8f}")
-                print(f"sigma8 from Pk = {compute_sigma8(self.k, self.P):.8f}")
+        self.set_pk()
 
     def choose_cosmo(self, cosmology):
         """
@@ -203,6 +189,26 @@ class Cosmology:
             )
 
         return cosmo_dict
+
+    def set_pk(self):
+        """
+        Sets the power spectrum based on the provided Pk_filename.
+        """
+        if self.Pk_filename is not None:
+            print(f"Loading power spectrum from {self.Pk_filename}")
+            self.k, self.Pk = read_pk(self.Pk_filename)
+            sigma8_computed = compute_sigma8(self.k, self.Pk)
+            if np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
+                self.P = self.Pk
+            else:
+                print(
+                    f"Warning: Computed sigma8 ({sigma8_computed}) does not match provided sigma8 ({self.sigma8}). "
+                    "Rescaling the power spectrum to match the provided sigma8."
+                )
+                self.P = change_sigma8(self.k, self.Pk, self.sigma8)
+                print("--------- After rescaling ---------")
+                print(f"sigma8 = {self.sigma8:.8f}")
+                print(f"sigma8 from Pk = {compute_sigma8(self.k, self.P):.8f}")
 
     def E_late_times(self, z):
         """
