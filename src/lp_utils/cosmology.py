@@ -1046,7 +1046,7 @@ def cov_noPS_vec(ri, rj, delta_r):
     diag_mask = np.isclose(ri, rj)
     # Off-diagonal mask (where analytic formula is valid)
     offdiag_mask = (~diag_mask) & (
-        (delta_r**2 / (ri - rj) ** 2 <= 1.0) & (delta_r**2 / (ri + rj) ** 2 < 1.0)
+        (delta_r**2 <= (ri - rj) ** 2) & (delta_r**2  < (ri + rj) ** 2)
     )
 
     # Apply diagonal formula
