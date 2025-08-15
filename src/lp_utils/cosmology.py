@@ -7,7 +7,7 @@ import mcfit
 from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
-from lp_utils.utils import SPEED_OF_LIGHT, read_json
+from lp_utils.utils import SPEED_OF_LIGHT, read_json, read_pk
 from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
 
 
@@ -33,6 +33,8 @@ class Cosmology:
         Dimensionless Hubble parameter.
     sigma8 : float, optional
         RMS mass fluctuation amplitude at 8 Mpc/h.
+    Pk_filename : str or None
+        Filename for the power spectrum (if available in preset).
 
     Attributes
     ----------
@@ -56,6 +58,12 @@ class Cosmology:
         Dark energy equation of state parameter (if available in preset).
     As : float
         Scalar amplitude (if available in preset).
+    k : ndarray
+        Wavenumber array for the power spectrum (if Pk_filename is provided).
+    Pk : ndarray
+        Power spectrum values from the file (if Pk_filename is provided).
+    P : ndarray
+        Power spectrum values, possibly rescaled to match sigma8 (if Pk_filename is provided).
 
     Methods
     -------
@@ -94,6 +102,7 @@ class Cosmology:
         Omega_k=None,
         h=None,
         sigma8=None,
+        Pk_filename=None,
     ):
         if preset is not None:
             self.cosmo = self.choose_cosmo(preset)
@@ -107,6 +116,7 @@ class Cosmology:
             self.n_s = self.cosmo["n_s"]
             self.w = self.cosmo.get("w", -1.0)
             self.As = self.cosmo.get("As")
+            self.Pk_filename = self.cosmo.get("Pk_filename", None)
         else:
             if None in (Omega_r, Omega_m, Omega_DE, Omega_k, h, sigma8):
                 raise ValueError(
@@ -118,6 +128,23 @@ class Cosmology:
             self.Omega_L = Omega_DE
             self.Omega_k = Omega_k
             self.sigma8 = sigma8
+            self.Pk_filename = Pk_filename
+
+        if self.Pk_filename is not None:
+            print(f"Loading power spectrum from {self.Pk_filename}")
+            self.k, self.Pk = read_pk(self.Pk_filename)
+            sigma8_computed = compute_sigma8(self.k, self.Pk)
+            if np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
+                self.P = self.Pk
+            else:
+                print(
+                    f"Warning: Computed sigma8 ({sigma8_computed}) does not match provided sigma8 ({self.sigma8}). "
+                    "Rescaling the power spectrum to match the provided sigma8."
+                )
+                self.P = change_sigma8(self.k, self.Pk, self.sigma8)
+                print("--------- After rescaling ---------")
+                print(f"sigma8 = {self.sigma8:.8f}")
+                print(f"sigma8 from Pk = {compute_sigma8(self.k, self.P):.8f}")
 
     def choose_cosmo(self, cosmology):
         """
@@ -678,6 +705,57 @@ def Pk2d_xi_ds(k, Pk, s_arr, z=0, Om=0.3):
 
 def dxi_ds(k, Pk, s_arr, z=0, Om=0.3):
     return np.gradient(Pk2xi(k, Pk, s_arr, z, Om), s_arr, edge_order=2)
+
+
+def coefficient_form(k, Asq, sigma0sq):
+    return Asq * np.exp(-(k**2) * sigma0sq)
+
+
+def Asq_z(z, Om=0.3, b10=1.0):
+    f = growth_rate(z, Om)
+    return b10**2 + 2 * b10 * f / 3 + f**2 / 5
+
+
+def sigma0sq(z, Om=0.3, b10=1.0, b01=0.0, sigmav=6.0, sigma_p=0.0):
+    D = growth_factor(z, Om)
+    f = growth_rate(z, Om)
+    sv = sigmav * D
+
+    sigma0_sq = (
+        -1
+        / (210 * (b10**2 + 2 * b10 * f / 3 + f**2 / 5))
+        * (
+            140 * b01 * (3 * b10 + f)
+            + 2
+            * (
+                -35 * b10**2 * (3 + f * (2 + f))
+                - 14 * b10 * f * (5 + 3 * f * (2 + f))
+                - 3 * f**2 * (7 + 5 * f * (2 + f))
+            )
+            * sv**2
+            - (35 * b10**2 + 42 * b10 * f + 15 * f**2) * sigma_p**2
+        )
+    )
+    return sigma0_sq
+
+
+# work in
+def sigmaP2(z, ng, Om=0.3, b10=1.0, rsd=True):
+    """
+    TODO: This function is not yet implemented.
+    ng : (float) Number density of galaxies in the sample.
+    """
+    D = growth_factor(z, Om)
+    if rsd:
+        f = growth_rate(z, Om)
+        beta = f / b10
+    else:
+        beta = 0.0
+
+    def integrand(mu):
+        return (2 * D**2 * b10**2 * InterpPSL(k) * (1 + beta * mu**2) ** 2) / ng
+
+    return 1.0
 
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
