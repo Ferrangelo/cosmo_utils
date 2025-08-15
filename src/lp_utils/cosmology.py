@@ -466,6 +466,103 @@ class Cosmology:
             (z_max + z_min) / 2,
         )[0]
 
+    def Pk2xi(self, s_arr, z=0):
+        def integrand(x, Px, r, xpiv=1):
+            return x**2 * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4)
+
+        s_arr = np.asarray(s_arr)
+        xi = []
+        for si in s_arr:
+            xi.append(integrate.simpson(integrand(self.k, self.P, si), self.k))
+        xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
+        return xi
+
+    def Pk2d_xi_ds(self, s_arr, z=0):
+        """
+        Computes the derivative of the linear two-point correlation function xi(s) with respect to s,
+        given a power spectrum P(k) and an array of separations s.
+
+        Parameters
+        ----------
+        s_arr : array_like
+            Array of separations at which to compute the derivative of xi.
+        z : float, optional
+            Redshift at which to evaluate the growth factor (default is 0).
+
+        Returns
+        -------
+        d_xi_ds : ndarray
+            The derivative of the two-point correlation function xi(s) with respect to s.
+        """
+
+        s_arr = np.asarray(s_arr)
+
+        def integrand(x, Px_interp, r):
+            return (
+                x**2
+                * Px_interp(x)
+                / (2.0 * np.pi) ** 3
+                * d_dr_j0_of_kr(x, r)
+                * wgc(x, 1, 4)
+            )
+
+        Px_interp = interp1d(
+            self.k, self.P, kind="cubic", bounds_error=False, fill_value=0.0
+        )
+        dxi = []
+        for si in s_arr:
+            val, _ = quad(lambda x: integrand(x, Px_interp, si), 0.001, 100, limit=200)
+            dxi.append(val)
+        dxi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(dxi)
+
+        return dxi
+
+    def dxi_ds(self, s_arr, z=0):
+        return np.gradient(
+            Pk2xi(self.k, self.P, s_arr, z, self.Omega_m), s_arr, edge_order=2
+        )
+
+    def coefficient_form(self, z, *args, **kwargs):
+        if len(args) >= 1:
+            b10 = args[0]
+        else:
+            b10 = kwargs.get("b10", 1.0)
+
+        sigma0sq = self.sigma0sq(z, *args, **kwargs)
+        Asq = self.Asq(z, b10)
+
+        return Asq * np.exp(-(self.k**2) * sigma0sq)
+
+    def Asq(self, z, b10=1.0):
+        f = self.growth_rate(z)
+        return b10**2 + 2 * b10 * f / 3 + f**2 / 5
+
+    def sigma_v(self):
+        return compute_sigma_v(self.k, self.P)
+
+    def sigma0sq(self, z, b10=1.0, b01=0.0, sigma_p=0.0):
+        D = self.growth_factor(z)
+        f = self.growth_rate(z)
+        sigmav = self.sigma_v()
+        sv = sigmav * D
+
+        sigma0_sq = (
+            -1
+            / (210 * (b10**2 + 2 * b10 * f / 3 + f**2 / 5))
+            * (
+                140 * b01 * (3 * b10 + f)
+                + 2
+                * (
+                    -35 * b10**2 * (3 + f * (2 + f))
+                    - 14 * b10 * f * (5 + 3 * f * (2 + f))
+                    - 3 * f**2 * (7 + 5 * f * (2 + f))
+                )
+                * sv**2
+                - (35 * b10**2 + 42 * b10 * f + 15 * f**2) * sigma_p**2
+            )
+        )
+        return sigma0_sq
+
 
 def bacco_params(cosmo_dict, expfactor=1):
     """
@@ -717,7 +814,7 @@ def coefficient_form(k, Asq, sigma0sq):
     return Asq * np.exp(-(k**2) * sigma0sq)
 
 
-def Asq_z(z, Om=0.3, b10=1.0):
+def Asq(z, Om=0.3, b10=1.0):
     f = growth_rate(z, Om)
     return b10**2 + 2 * b10 * f / 3 + f**2 / 5
 
@@ -745,7 +842,6 @@ def sigma0sq(z, Om=0.3, b10=1.0, b01=0.0, sigmav=6.0, sigma_p=0.0):
     return sigma0_sq
 
 
-# work in
 def sigmaP2(z, ng, Om=0.3, b10=1.0, rsd=True):
     """
     TODO: This function is not yet implemented.
