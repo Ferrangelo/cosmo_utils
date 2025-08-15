@@ -363,7 +363,9 @@ class Cosmology:
         volume_interp = interp1d(z_vals, vol_grid, kind="cubic")
         return volume_interp
 
-    def find_z_for_target_volume(self, volume_target, fsky, z_min=0, z_max=2, z_vals=None):
+    def find_z_for_target_volume(
+        self, volume_target, fsky, z_min=0, z_max=2, z_vals=None
+    ):
         """
         Find redshift where cumulative volume equals target.
 
@@ -971,98 +973,6 @@ def cov_noPS_off_diag(ri, rj, delta_r):
     Returns
     -------
     float  Off-diagonal covariance value.
-    """
-
-    cov_noPS_off_diag = (
-        18
-        / (np.pi * delta_r**2 * (12 * ri**2 + delta_r**2) * (12 * rj**2 + delta_r**2))
-        * (
-            2 * delta_r**2 * (ri + rj + abs(ri - rj))
-            - 2
-            * delta_r**2
-            * ((ri - rj) ** 2 * (ri + rj) + abs(ri - rj) ** 3)
-            / (ri - rj) ** 2
-            - ri
-            * delta_r
-            * (2.0 * delta_r + abs(ri - rj + delta_r) - abs(-ri + rj + delta_r))
-            - rj
-            * delta_r
-            * (2.0 * delta_r - abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
-            + 2
-            * ri
-            * rj
-            * (-2 * abs(ri - rj) + abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
-            + rj
-            * (
-                -2 * (ri + rj) ** 2
-                + (ri + rj - delta_r) ** 2
-                + (ri + rj + delta_r) ** 2
-                + 2 * (ri - rj) ** 2 * np.sign(ri - rj)
-                - (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
-                - (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
-            )
-            + ri
-            * (
-                -2 * (ri + rj) ** 2
-                + (ri + rj - delta_r) ** 2
-                + (ri + rj + delta_r) ** 2
-                - 2 * (ri - rj) ** 2 * np.sign(ri - rj)
-                + (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
-                + (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
-            )
-        )
-    )
-
-    return cov_noPS_off_diag
-
-
-def cov_noPS_diag(ri, delta_r):
-    return 6.0 / (12.0 * np.pi * ri**2 + np.pi * delta_r**3)
-
-
-def cov_noPS(ri, rj, delta_r):
-    if ri == rj:
-        return cov_noPS_diag(ri, delta_r)
-    elif (
-        ri != rj
-        and delta_r**2 / (ri - rj) ** 2 <= 1.0
-        and delta_r**2 / (ri + rj) ** 2 < 1.0
-    ):
-        return cov_noPS_off_diag(ri, rj, delta_r)
-
-
-def cov_noPS_vec(ri, rj, delta_r):
-    """
-    Vectorized version of cov_noPS: ri and rj can be scalars or arrays of any shape.
-    Applies cov_noPS_diag for diagonal, cov_noPS_off_diag for off-diagonal.
-    """
-    ri = np.asarray(ri)
-    rj = np.asarray(rj)
-    cov = np.zeros(np.broadcast(ri, rj).shape)
-
-    # Diagonal mask
-    diag_mask = np.isclose(ri, rj)
-    # Off-diagonal mask (where analytic formula is valid)
-    offdiag_mask = (~diag_mask) & (
-        (delta_r**2 / (ri - rj) ** 2 <= 1.0) & (delta_r**2 / (ri + rj) ** 2 < 1.0)
-    )
-
-    # Apply diagonal formula
-    cov[diag_mask] = cov_noPS_diag(ri[diag_mask], delta_r)
-    # Apply off-diagonal formula
-    cov[offdiag_mask] = cov_noPS_off_diag(ri[offdiag_mask], rj[offdiag_mask], delta_r)
-    # All other cases remain zero (or you can set to np.nan if you prefer)
-    return cov
-
-
-if __name__ == "__main__":
-    print(
-        "This module provides cosmology utilities and is not intended to be run directly."
-    )
-    Returns
-    -------
-    float
-        The covariance between the two shells.
     """
 
     cov_noPS_off_diag = (
