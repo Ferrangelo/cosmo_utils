@@ -7,5 +7,6 @@
     "Omega_DE": 0.742589237,
     "w": -1.0000000,
     "n_s": 0.96300000,
-    "sigma8": 0.80100775
+    "sigma8": 0.80100775,
+    "Pk_filename": "RayGal_matterpower_z0p0.dat"
 }
