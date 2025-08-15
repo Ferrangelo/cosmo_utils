@@ -1,6 +1,15 @@
 ### lp_utils
-Functions and classes often call to work with catalogs (mostly from raygal simulations) and manipulate them create input files for corrufunc.
+Utilities for BAO Linear Point analyses on RayGal simulation catalogs: loading and filtering catalogs, applying redshift/angular cuts, parsing RayGal catalog filenames (`catalogs.parse_catalog_filename`) and Corrfunc pair-count filenames (`utils.parse_corrfunc_filename`), Basic cosmology computations such as P(k)->xi and functions to construct the infrastructure for LP analysis.
+
+#### Features
+- RayGal catalog parsing & metadata extraction
+- Corrfunc filename parameter decoding (DD/DR/RR smu outputs)
+- Cosmology parameter bundle (h, Omegas, sigma8, w) for reproducibility
+- Power spectrum to correlation function utilities
+- Simple helpers for constructing analysis inputs
 
 #### Installation
-
-In the directory `lp_utils` run `python3 -m pip install --upgrade build` and then `python3 -m pip install -e .`
+```
+python3 -m pip install --upgrade build
+python3 -m pip install -e .
+```

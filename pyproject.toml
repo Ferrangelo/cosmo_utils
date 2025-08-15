@@ -1,7 +1,7 @@
 [project]
 name = "lp-utils"
 version = "0.1.0"
-description = "Functions and classes to work with catalogs (mostly from raygal simulations) and create input files for corrufnc."
+description = "Utilities BAO Linear Point analysis (catalogues, covariance matrices, cosmology computations etc.)"
 readme = "README.md"
 authors = [
     { name = "Angelo Ferrari", email = "anferrar@bo.infn.it" }
@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "jupyter>=1.1.1",
     "matplotlib>=3.10.1",
+    "mcfit>=0.0.22",
     "numpy>=2.2.3",
     "polars>=1.24.0",
     "scipy>=1.15.2",

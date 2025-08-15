@@ -846,6 +846,7 @@ source = { editable = "." }
 dependencies = [
     { name = "jupyter" },
     { name = "matplotlib" },
+    { name = "mcfit" },
     { name = "numpy" },
     { name = "polars" },
     { name = "scipy" },
@@ -860,6 +861,7 @@ dev = [
 requires-dist = [
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.1" },
+    { name = "mcfit", specifier = ">=0.0.22" },
     { name = "numpy", specifier = ">=2.2.3" },
     { name = "polars", specifier = ">=1.24.0" },
     { name = "scipy", specifier = ">=1.15.2" },
@@ -956,12 +958,32 @@ wheels = [
 ]
 
 [[package]]
+name = "mcfit"
+version = "0.0.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mpmath" },
+    { name = "numpy" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fd/55/1758ae48b2724e4ad88207861c799b212a41ecd8c7d5b1adc667fa13da2b/mcfit-0.0.22.tar.gz", hash = "sha256:9de22881a6b5f7aa55fc137acda06b44570631ba197550f9b0f3fa99acac2438", size = 23479 }
+
+[[package]]
 name = "mistune"
 version = "3.1.3"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c4/79/bda47f7dd7c3c55770478d6d02c9960c430b0cf1773b72366ff89126ea31/mistune-3.1.3.tar.gz", hash = "sha256:a7035c21782b2becb6be62f8f25d3df81ccb4d6fa477a6525b15af06539f02a0", size = 94347 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/4d/23c4e4f09da849e127e9f123241946c23c1e30f45a88366879e064211815/mistune-3.1.3-py3-none-any.whl", hash = "sha256:1a32314113cff28aa6432e99e522677c8587fd83e3d51c29b82a52409c842bd9", size = 53410 },
+]
+
+[[package]]
+name = "mpmath"
+version = "1.4.0a7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/e3/359765a42d311b5267cf5ef303afb14ab12b217b590f708d0763a13dc74a/mpmath-1.4.0a7.tar.gz", hash = "sha256:339a167bf31d4b0175a600851f0377346ac158b9dbc5f3f81676188b08b6dc80", size = 2088255 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/cf/f9793bf328f21d08f9794f4d910f502043bec08e0df00d4d68fc11e8f1e3/mpmath-1.4.0a7-py3-none-any.whl", hash = "sha256:b631d57b5306e43d963341e5cd96822e84483c4465b0a51ab1a6400f83bb9a01", size = 563195 },
 ]
 
 [[package]]
