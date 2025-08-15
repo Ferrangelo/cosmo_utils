@@ -8,7 +8,7 @@ from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json, read_pk
-from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
+from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, j1, d_dr_j0_of_kr
 
 
 class Cosmology:
@@ -477,6 +477,17 @@ class Cosmology:
         xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
         return xi
 
+    def Pk2xiNL(self, s_arr, z=0, *args, **kwargs):
+        def integrand(x, Px, r, xpiv=1):
+            return x**2 * self.coefficient_form(z, *args, **kwargs) * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4)
+
+        s_arr = np.asarray(s_arr)
+        xi = []
+        for si in s_arr:
+            xi.append(integrate.simpson(integrand(self.k, self.P, si), self.k))
+        xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
+        return xi
+
     def Pk2d_xi_ds(self, s_arr, z=0):
         """
         Computes the derivative of the linear two-point correlation function xi(s) with respect to s,
@@ -518,10 +529,11 @@ class Cosmology:
         return dxi
 
     def dxi_ds(self, s_arr, z=0):
-        return np.gradient(
-            Pk2xi(self.k, self.P, s_arr, z, self.Omega_m), s_arr, edge_order=2
-        )
-
+        return np.gradient(self.Pk2xi(s_arr, z), s_arr, edge_order=2)
+    
+    def dxiNL_ds(self, s_arr, z=0, *args, **kwargs):
+        return np.gradient(self.Pk2xiNL(s_arr, z, *args, **kwargs), s_arr, edge_order=2)
+    
     def coefficient_form(self, z, *args, **kwargs):
         if len(args) >= 1:
             b10 = args[0]
@@ -562,7 +574,37 @@ class Cosmology:
             )
         )
         return sigma0_sq
-
+    
+    def Vs(ri, delta_r):
+        """
+        Computes the volume of a spherical shell with inner radius ri and thickness delta_r.
+        Eq. (7) of Phys. Rev. D 99, 123515 (2019)
+        """
+        return np.pi / 3 * (12. * ri**2 * delta_r + delta_r**3)
+    
+    def j0_bar(self, ri, delta_r):
+        """
+        Computes the average value of the spherical Bessel function j0 over a spherical shell of radius ri and thickness delta_r.
+        Eq. (8) of Phys. Rev. D 99, 123515 (2019)
+        
+        Parameters
+        ----------
+        ri : float
+            The inner radius of the shell.
+        delta_r : float
+            The thickness of the shell.
+        
+        Returns
+        -------
+        float
+            The average value of j0 over the shell.
+        """
+        
+        r1 = ri - delta_r / 2.0
+        r2 = ri + delta_r / 2.0
+        return 4. * np.pi * (
+            r2**2 * j1(self.k * r2) - r1**2 * j1(self.k * r1) / self.k
+        ) / self.Vs(ri, delta_r)
 
 def bacco_params(cosmo_dict, expfactor=1):
     """
