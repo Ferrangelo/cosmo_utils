@@ -3,6 +3,7 @@ import os
 import re
 import socket
 from pathlib import Path
+import numpy as np
 
 SPEED_OF_LIGHT = 299_792.458  # km/s
 
@@ -31,6 +32,14 @@ def set_paths():
         raygal_test_path,
     )
 
+def read_pk(filename):
+    """
+    Read a power spectrum file and return its contents.
+    The file is expected to be in txt format.
+    """
+    pk_dir = Path(__file__).parent / "config" / "pks"
+    k, Pk = np.loadtxt(pk_dir / filename, dtype=float, comments="#").T
+    return k, Pk
 
 def read_json(filename):
     # Get the package's config directory
@@ -330,8 +339,6 @@ def load_jsons_from_dir_tmp(json_dir, pattern=None, key_extractor=None):
 
     return jsons
 
-
-# ...existing code...
 
 if __name__ == "__main__":
     print(
