@@ -19,78 +19,45 @@ class Cosmology:
 
     Parameters
     ----------
-    preset : str, optional
-        Name of the preset cosmology to use. If provided, loads parameters from a corresponding JSON file.
-    Omega_r : float, optional
-        Radiation density parameter.
-    Omega_m : float, optional
-        Matter density parameter.
-    Omega_DE : float, optional
-        Dark energy density parameter.
-    Omega_k : float, optional
-        Curvature density parameter.
-    h : float, optional
-        Dimensionless Hubble parameter.
-    sigma8 : float, optional
-        RMS mass fluctuation amplitude at 8 Mpc/h.
-    Pk_filename : str or None
-        Filename for the power spectrum (if available in preset).
+    preset : str, optional  Name of the preset cosmology to use. If provided, loads parameters from a corresponding JSON file.
+    Omega_r : float, optional  Radiation density parameter.
+    Omega_m : float, optional  Matter density parameter.
+    Omega_DE : float, optional  Dark energy density parameter.
+    Omega_k : float, optional  Curvature density parameter.
+    h : float, optional  Dimensionless Hubble parameter.
+    sigma8 : float, optional  RMS mass fluctuation amplitude at 8 Mpc/h.
+    Pk_filename : str or None  Filename for the power spectrum (if available in preset).
 
     Attributes
     ----------
-    Omega_r : float
-        Radiation density parameter.
-    Omega_m : float
-        Matter density parameter.
-    Omega_DE : float
-        Dark energy density parameter.
-    Omega_L : float
-        Alias for Omega_DE.
-    Omega_k : float
-        Curvature density parameter.
-    h : float
-        Dimensionless Hubble parameter.
-    sigma8 : float
-        RMS mass fluctuation amplitude at 8 Mpc/h.
-    n_s : float
-        Scalar spectral index (if available in preset).
-    w : float
-        Dark energy equation of state parameter (if available in preset).
-    As : float
-        Scalar amplitude (if available in preset).
-    k : ndarray
-        Wavenumber array for the power spectrum (if Pk_filename is provided).
-    Pk : ndarray
-        Power spectrum values from the file (if Pk_filename is provided).
-    P : ndarray
-        Power spectrum values, possibly rescaled to match sigma8 (if Pk_filename is provided).
+    Omega_r : float  Radiation density parameter.
+    Omega_m : float  Matter density parameter.
+    Omega_DE : float  Dark energy density parameter.
+    Omega_L : float  Alias for Omega_DE.
+    Omega_k : float  Curvature density parameter.
+    h : float  Dimensionless Hubble parameter.
+    sigma8 : float  RMS mass fluctuation amplitude at 8 Mpc/h.
+    n_s : float  Scalar spectral index (if available in preset).
+    w : float  Dark energy equation of state parameter (if available in preset).
+    As : float  Scalar amplitude (if available in preset).
+    k : ndarray  Wavenumber array for the power spectrum (if Pk_filename is provided).
+    Pk : ndarray  Power spectrum values from the file (if Pk_filename is provided).
+    P : ndarray  Power spectrum values, possibly rescaled to match sigma8 (if Pk_filename is provided).
 
     Methods
     -------
-    choose_cosmo(cosmology)
-        Loads cosmological parameters from a preset JSON file.
-    E_late_times(z)
-        Computes the dimensionless Hubble parameter E(z) for late times (ignoring radiation).
-    E_correct(z)
-        Computes the dimensionless Hubble parameter E(z) including radiation.
-    comoving_distance(z, h_units=True)
-        Calculates the comoving distance to redshift z, optionally in units of Mpc/h.
-    comoving_distance_late_times(z, h_units=True)
-        Calculates the comoving distance to redshift z using late-time approximation.
-    comoving_distance_interp(use_late_times=False, z_vals=None)
-        Returns an interpolator for comoving distance as a function of redshift.
-    growth_factor(z_input)
-        Computes the linear growth factor D(z) at given redshift(s).
-    d_dz_growth_factor(z_input)
-        Computes the derivative of the linear growth factor D(z) with respect to redshift.
-    growth_rate(z_input)
-        Computes the linear growth rate f(z) at given redshift(s).
-    volume_zbin(zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None)
-        Computes the comoving volume between two redshifts for a given sky fraction or solid angle.
-    get_vol_interp(zmin=0, zmax=2.5, fsky=None, solid_angle=None, z_vals=None)
-        Returns an interpolator for the comoving volume as a function of redshift.
-    find_z_for_target_volume(volume_target, fsky, z_min=0, z_max=2, z_vals=None)
-        Finds the redshift corresponding to a target comoving volume.
+    choose_cosmo(cosmology)  Loads cosmological parameters from a preset JSON file.
+    E_late_times(z)  Computes the dimensionless Hubble parameter E(z) for late times (ignoring radiation).
+    E_correct(z)  Computes the dimensionless Hubble parameter E(z) including radiation.
+    comoving_distance(z, h_units=True)  Calculates the comoving distance to redshift z, optionally in units of Mpc/h.
+    comoving_distance_late_times(z, h_units=True)  Calculates the comoving distance to redshift z using late-time approximation.
+    comoving_distance_interp(use_late_times=False, z_vals=None)  Returns an interpolator for comoving distance as a function of redshift.
+    growth_factor(z_input)  Computes the linear growth factor D(z) at given redshift(s).
+    d_dz_growth_factor(z_input)  Computes the derivative of the linear growth factor D(z) with respect to redshift.
+    growth_rate(z_input)  Computes the linear growth rate f(z) at given redshift(s).
+    volume_zbin(zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None)  Computes the comoving volume between two redshifts.
+    get_vol_interp(zmin=0, zmax=2.5, fsky=None, solid_angle=None, z_vals=None)  Returns an interpolator for comoving volume vs redshift.
+    find_z_for_target_volume(volume_target, fsky, z_min=0, z_max=2, z_vals=None)  Finds redshift for a target comoving volume.
     """
 
     def __init__(
@@ -138,13 +105,11 @@ class Cosmology:
 
         Parameters
         ----------
-        cosmology : str
-            Name of the preset cosmology.
+        cosmology : str  Name of the preset cosmology.
 
         Returns
         -------
-        cosmo_dict : dict
-            Dictionary of cosmological parameters.
+        cosmo_dict : dict  Dictionary of cosmological parameters.
         """
         list_of_cosmologies = [
             "raygal",
@@ -169,13 +134,11 @@ class Cosmology:
 
         Parameters
         ----------
-        filename : str
-            Path to the JSON file.
+        filename : str  Path to the JSON file.
 
         Returns
         -------
-        cosmo_dict : dict
-            Dictionary of cosmological parameters.
+        cosmo_dict : dict  Dictionary of cosmological parameters.
         """
         cosmo_dict = read_json(filename)
 
@@ -216,14 +179,11 @@ class Cosmology:
 
         Parameters
         ----------
-        z : float or array-like
-            Redshift(s) at which to evaluate E(z).
+        z : float or array-like  Redshift(s) at which to evaluate E(z).
 
         Returns
         -------
-        float or ndarray
-            The value(s) of the dimensionless Hubble parameter E(z) at the given redshift(s),
-            computed as sqrt(Omega_m * (1 + z)^3 + Omega_k * (1 + z)^2 + Omega_L).
+        float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_L).
         """
         return np.sqrt(
             self.Omega_m * (1 + z) ** 3 + self.Omega_k * (1 + z) ** 2 + self.Omega_L
@@ -231,27 +191,19 @@ class Cosmology:
 
     def E_correct(self, z):
         """
-        Calculate the dimensionless Hubble parameter E(z) at redshift z using the corrected cosmological parameters.
+        Calculate the dimensionless Hubble parameter E(z) including radiation.
 
         Parameters
         ----------
-        z : float or array-like
-            Redshift value(s) at which to evaluate E(z).
+        z : float or array-like  Redshift value(s) at which to evaluate E(z).
 
         Returns
         -------
-        float or ndarray
-            The value(s) of the dimensionless Hubble parameter E(z).
+        float or ndarray  E(z) including radiation, matter, curvature, dark energy.
 
         Notes
         -----
-        E(z) is computed as:
-            E(z) = sqrt(
-                Omega_r * (1 + z)^4 +
-                Omega_m * (1 + z)^3 +
-                Omega_k * (1 + z)^2 +
-                Omega_L
-        where Omega_r, Omega_m, Omega_k, and Omega_L are the density parameters for radiation, matter, curvature, and dark energy, respectively.
+        E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_L).
         """
         return np.sqrt(
             self.Omega_r * (1 + z) ** 4
@@ -266,15 +218,12 @@ class Cosmology:
 
         Parameters
         ----------
-        z : float or array-like
-            Redshift(s) at which to compute the comoving distance.
-        h_units : bool, optional
-            If True (default), return the distance in units Mpc/h.
+        z : float or array-like  Redshift(s) for distance computation.
+        h_units : bool, optional  If True return Mpc/h, else Mpc (default True).
 
         Returns
         -------
-        float or ndarray
-            Comoving distance(s) corresponding to the input redshift(s).
+        float or ndarray  Comoving distance(s).
         """
         h = 1.0
         if not h_units:
@@ -295,15 +244,12 @@ class Cosmology:
 
         Parameters
         ----------
-        z : float
-            The redshift at which to compute the comoving distance.
-        h_units : bool, optional
-            If True (default), the result is returned in units of Mpc/h.
+        z : float  Redshift.
+        h_units : bool, optional  If True return Mpc/h (default True).
 
         Returns
         -------
-        float
-            The comoving distance to redshift z in Mpc.
+        float  Comoving distance.
         """
         h = 1.0
         if not h_units:
@@ -314,21 +260,16 @@ class Cosmology:
 
     def comoving_distance_interp(self, use_late_times=False, z_vals=None):
         """
-        Returns a cubic interpolation function for the comoving distance as a function of redshift.
+        Build cubic interpolation for comoving distance vs redshift.
 
         Parameters
         ----------
-        use_late_times : bool, optional
-            If True, use `comoving_distance_late_times` for distance calculation.
-            If False (default), use `comoving_distance`.
-        z_vals : array-like or None, optional
-            Array of redshift values at which to compute the comoving distance.
-            If None, defaults to a linearly spaced array from 0.0 to 2.5 with 4000 points.
+        use_late_times : bool, optional  If True use late-time approximation (default False).
+        z_vals : array-like or None, optional  Redshift grid (default linspace 0..2.5, 4000 pts).
 
         Returns
         -------
-        distance_cubic_interp : callable
-            Cubic interpolation function mapping redshift to comoving distance.
+        callable  Interpolator r(z).
         """
         if z_vals is None:
             z_vals = np.linspace(0.0, 2.5, 4000)
@@ -363,32 +304,24 @@ class Cosmology:
         self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None
     ):
         """
-        Calculates the comoving volume between two redshifts (zi and zf) within a specified sky area.
+        Compute comoving volume between redshifts zi and zf over a sky area.
 
         Parameters
         ----------
-        zi : float
-            Initial redshift.
-        zf : float
-            Final redshift.
-        fsky : float, optional
-            Fraction of the sky covered (0 < fsky <= 1). If provided, solid_angle is ignored.
-        solid_angle : float, optional
-            Solid angle in steradians. Used if fsky is not provided.
-        use_late_times : bool, optional
-            If True, us comoving_distance_late_times to compute distances.
-        z_vals : array-like, optional
-            Redshift values for interpolation.
+        zi : float  Initial redshift.
+        zf : float  Final redshift.
+        fsky : float, optional  Sky fraction (0<f<=1); overrides solid_angle.
+        solid_angle : float, optional  Solid angle in steradians if fsky None.
+        use_late_times : bool, optional  Use late-time distance (default False).
+        z_vals : array-like, optional  Redshift grid for interpolation.
 
         Returns
         -------
-        float
-            Comoving volume between zi and zf within the specified sky area.
+        float  Comoving volume between zi and zf.
 
         Raises
         ------
-        ValueError
-            If neither fsky nor solid_angle is provided.
+        ValueError  If neither fsky nor solid_angle provided.
         """
         r = self.comoving_distance_interp(use_late_times, z_vals)
         if fsky is not None:
@@ -403,25 +336,19 @@ class Cosmology:
         self, zmin=0, zmax=2.5, fsky=None, solid_angle=None, z_vals=None
     ):
         """
-        Creates an interpolator function for the comoving volume between redshift bins.
+        Create interpolator for cumulative comoving volume.
 
         Parameters
         ----------
-        zmin : float, optional
-            Minimum redshift value for the volume calculation (default is 0).
-        zmax : float, optional
-            Maximum redshift value for the volume calculation (default is 2.5).
-        fsky : float, optional
-            Fraction of the sky covered (default is None). If not provided, it will be calculated from `solid_angle` if available.
-        solid_angle : float, optional
-            Solid angle in steradians (default is None). Used to compute `fsky` if provided.
-        z_vals : array-like, optional
-            Array of redshift values over which to compute the volume grid (default is None, which uses 4000 points between 0 and 2.5).
+        zmin : float, optional  Minimum redshift (default 0).
+        zmax : float, optional  Maximum redshift (default 2.5).
+        fsky : float, optional  Sky fraction; computed from solid_angle if None.
+        solid_angle : float, optional  Solid angle steradians.
+        z_vals : array-like, optional  Redshift grid (default 4000 pts 0..2.5).
 
         Returns
         -------
-        volume_interp : scipy.interpolate.interp1d
-            Interpolator function that returns the comoving volume for a given redshift.
+        scipy.interpolate.interp1d  Interpolator giving volume at z.
         """
         # Create interpolator for volume_zbin function
         if z_vals is None:
@@ -436,29 +363,21 @@ class Cosmology:
         volume_interp = interp1d(z_vals, vol_grid, kind="cubic")
         return volume_interp
 
-    def find_z_for_target_volume(
-        self, volume_target, fsky, z_min=0, z_max=2, z_vals=None
-    ):
+    def find_z_for_target_volume(self, volume_target, fsky, z_min=0, z_max=2, z_vals=None):
         """
-        Finds the redshift value `z` such that the comoving volume at that redshift matches the sepcified volume_target.
+        Find redshift where cumulative volume equals target.
 
         Parameters
         ----------
-        volume_target : float
-            The target comoving volume to match.
-        fsky : float
-            Fraction of the sky covered (0 < fsky <= 1).
-        z_min : float, optional
-            Minimum redshift value to consider (default is 0).
-        z_max : float, optional
-            Maximum redshift value to consider (default is 2).
-        z_vals : array-like, optional
-            Optional array of redshift values for interpolation.
+        volume_target : float  Target comoving volume.
+        fsky : float  Sky fraction (0<f<=1).
+        z_min : float, optional  Minimum search redshift (default 0).
+        z_max : float, optional  Maximum search redshift (default 2).
+        z_vals : array-like, optional  Redshift grid for distances.
 
         Returns
         -------
-        float
-            The redshift value `z` such that the comoving volume at that redshift matches the sepcified volume_target.
+        float  Redshift matching target volume.
         """
         return fsolve(
             lambda z: self.volume_zbin(z, z_max, fsky=fsky, z_vals=z_vals)
@@ -515,16 +434,16 @@ class Cosmology:
 
     def Pk2d_xi_ds(self, s_arr, z=0):
         """
-        Computes the derivative of the linear two-point correlation function xi(s) with respect to s, given a power spectrum P(k) and an array of separations s.
+        Derivative of xi(s) from P(k).
 
         Parameters
         ----------
-        s_arr : array_like    Array of separations at which to compute the derivative of xi.
-        z : float, optional   Redshift at which to evaluate the growth factor (default is 0).
+        s_arr : array_like  Separations where derivative is computed.
+        z : float, optional  Redshift (default 0).
 
         Returns
         -------
-        d_xi_ds : ndarray    The derivative of the two-point correlation function xi(s) with respect to s.
+        ndarray  d xi / ds at s.
         """
 
         s_arr = np.asarray(s_arr)
@@ -598,17 +517,19 @@ class Cosmology:
 
     def sigmaP2(self, k, z, ng, b10=1.0, rsd=True):
         """
+        Compute SigmaP2(k,z) for covariance integrals.
+
         Parameters
         ----------
-        k (float): Wavenumber at which to evaluate.
-        z (float): Redshift.
-        b10 (float, optional): Linear bias parameter (default 1.0).
-        ng (float, optional): Number density of galaxies (default 1.0).
+        k : float or array_like  Wavenumber(s).
+        z : float  Redshift.
+        ng : float  Number density of galaxies.
+        b10 : float, optional  Linear bias (default 1.0).
+        rsd : bool, optional  Include RSD factor (default True).
 
         Returns
         -------
-        float
-            Value of SigmaP2 at (k, z).
+        ndarray  SigmaP2 values matching input k shape.
         """
         D = self.growth_factor(z)
         beta = 0.0
@@ -657,7 +578,22 @@ class Cosmology:
         self, riN, rjN, z, delta_rN, ng, b10=1.0, rsd=True, iterpolator=None
     ):
         """
-        Fully vectorized version of cov_int: riN and rjN can be 2D arrays (e.g., from meshgrid).
+        Fully vectorized covariance integral for 2D grids.
+
+        Parameters
+        ----------
+        riN : array_like  Radial bin centers (can be 2D).
+        rjN : array_like  Radial bin centers (can be 2D).
+        z : float  Redshift.
+        delta_rN : float  Bin thickness.
+        ng : float  Number density.
+        b10 : float, optional  Linear bias (default 1.0).
+        rsd : bool, optional  Include RSD (default True).
+        iterpolator : callable, optional  Precomputed SigmaP2(k) interpolator.
+
+        Returns
+        -------
+        ndarray  Covariance matrix/grid.
         """
         # k_grid is 1D
         k_grid = np.logspace(-3, 2, 1000)
@@ -687,8 +623,16 @@ class Cosmology:
 
 def bacco_params(cosmo_dict, expfactor=1):
     """
-    Returns a dictionary of cosmological parameters for BACCO.
-    omega_cold is the total cold matter (Baryons + Cold Dark Matter).
+    Build BACCO parameter dictionary.
+
+    Parameters
+    ----------
+    cosmo_dict : dict  Cosmological parameters.
+    expfactor : float, optional  Scale factor a (default 1).
+
+    Returns
+    -------
+    dict  BACCO-formatted parameter dictionary.
     """
     bacco_dict = {
         "omega_cold": cosmo_dict["Omega_m"],
@@ -707,20 +651,16 @@ def bacco_params(cosmo_dict, expfactor=1):
 
 def _growth_factor_impl(z, Om):
     """
-    Compute the linear growth factor D(z) for a given redshift `z` and matter density parameter `Om`.
-    The growth factor is normalized at redshift z = 0.
+    Linear growth factor D(z), normalized at z=0.
 
     Parameters
     ----------
-    z : float or array-like
-        Redshift(s) at which to evaluate the growth factor.
-    Om : float
-        Matter density parameter (Ω_m).
+    z : float or array-like  Redshift(s).
+    Om : float  Matter density parameter.
 
     Returns
     -------
-    D : float or ndarray
-        The linear growth factor evaluated at the input redshift(s).
+    float or ndarray  Growth factor D(z).
     """
     z = np.asarray(z)
     a = 1 / (1 + z)
@@ -733,18 +673,16 @@ def _growth_factor_impl(z, Om):
 
 def _d_dz_growth_factor_impl(z_input, Om):
     """
-    Computes the derivative of the linear growth factor D(z) with respect to redshift z.
+    Derivative dD/dz of the linear growth factor.
+
     Parameters
     ----------
-    z_input : float or array-like
-              Redshift(s) at which to evaluate the derivative of the growth factor.
-    Om : float
-        Matter density parameter (Ω_m).
+    z_input : float or array-like  Redshift(s).
+    Om : float  Matter density parameter.
 
     Returns
     -------
-    dDz_dz : float or ndarray
-             The derivative of the linear growth factor D(z) with respect to z, evaluated at the input redshift(s).
+    float or ndarray  dD/dz at input redshift(s).
     """
 
     z = np.asarray(z_input)
@@ -761,24 +699,16 @@ def _d_dz_growth_factor_impl(z_input, Om):
 
 def _growth_rate_impl(z_input, Om):
     """
-    Computes the linear growth rate of cosmic structures as a function of redshift.
+    Linear growth rate f(z) = d ln D / d ln a.
 
     Parameters
     ----------
-    z_input : array-like or float
-        Redshift(s) at which to evaluate the growth rate.
-    Om : float
-        Matter density parameter (Omega_m).
+    z_input : float or array-like  Redshift(s).
+    Om : float  Matter density parameter.
 
     Returns
     -------
-    growth_rate : ndarray or float
-        The linear growth rate evaluated at the input redshift(s).
-
-    Notes
-    -----
-    The growth rate is defined as f(z) = dlnD/dlna, where D(z) is the linear growth factor.
-    This implementation uses the derivative of the growth factor with respect to redshift.
+    float or ndarray  Growth rate f(z).
     """
     z = np.asarray(z_input)
     a = 1 / (1 + z)
@@ -810,26 +740,21 @@ def growth_rate(z_input, Om):
 
 def change_sigma8(k, P, sigma8_wanted):
     """
-    Rescales the input power spectrum `P` so that the resulting spectrum yields the desired value of sigma8.
+    Rescale P(k) to achieve desired sigma8.
 
     Parameters
     ----------
-    k : array_like
-        Array of wavenumbers at which the power spectrum `P` is defined.
-    P : array_like
-        Power spectrum values corresponding to the wavenumbers `k`.
-    sigma8_wanted : float
-        The target value for sigma8, the RMS fluctuation of matter in spheres of radius 8 Mpc/h.
+    k : array_like  Wavenumbers.
+    P : array_like  Power spectrum values.
+    sigma8_wanted : float  Target sigma8.
 
     Returns
     -------
-    new_P : array_like
-        The rescaled power spectrum such that its sigma8 matches `sigma8_wanted`.
+    array_like  Rescaled power spectrum.
 
     Raises
     ------
-    ValueError
-        If the computed sigma8 from the rescaled power spectrum does not match `sigma8_wanted` within a relative tolerance of 1e-3.
+    ValueError  If resulting sigma8 mismatch beyond tolerance.
     """
     sigma8_old = compute_sigma8(k, P)
     new_P = P * (sigma8_wanted / sigma8_old) ** 2
@@ -884,26 +809,19 @@ def Pk2xi_mcfit(k, Pk, s_arr):
 
 def Pk2d_xi_ds(k, Pk, s_arr, z=0, Om=0.3):
     """
-    Computes the derivative of the linear two-point correlation function xi(s) with respect to s,
-    given a power spectrum P(k) and an array of separations s.
+    Derivative d xi / ds from P(k).
 
     Parameters
     ----------
-    k : array_like
-        Wavenumbers at which the power spectrum P(k) is defined.
-    Pk : array_like
-        Power spectrum values corresponding to the wavenumbers k.
-    s_arr : array_like
-        Array of separations at which to compute the derivative of xi.
-    z : float, optional
-        Redshift at which to evaluate the growth factor (default is 0).
-    Om : float, optional
-        Matter density parameter (default is 0.3).
+    k : array_like  Wavenumbers.
+    Pk : array_like  Power spectrum values.
+    s_arr : array_like  Separations.
+    z : float, optional  Redshift (default 0).
+    Om : float, optional  Matter density parameter (default 0.3).
 
     Returns
     -------
-    d_xi_ds : ndarray
-        The derivative of the two-point correlation function xi(s) with respect to s.
+    ndarray  d xi / ds at s.
     """
 
     s_arr = np.asarray(s_arr)
@@ -965,25 +883,19 @@ def sigma0sq(z, Om=0.3, b10=1.0, b01=0.0, sigmav=6.0, sigma_p=0.0):
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
     """
-    Calculates the Landy-Szalay estimator for the two-point correlation function.
+    Landy-Szalay estimator for xi.
 
     Parameters
     ----------
-    N : int
-        Number of data points in the sample.
-    Nr : int
-        Number of random points in the sample.
-    dd_of_s : array-like or float
-        Number of data-data pairs as a function of separation s.
-    dr_of_s : array-like or float
-        Number of data-random pairs as a function of separation s.
-    rr_of_s : array-like or float
-        Number of random-random pairs as a function of separation s.
+    N : int  Number of data points.
+    Nr : int  Number of random points.
+    dd_of_s : array-like or float  Data-data pair counts.
+    dr_of_s : array-like or float  Data-random pair counts.
+    rr_of_s : array-like or float  Random-random pair counts.
 
     Returns
     -------
-    float or array-like
-        The Landy-Szalay estimator value(s) for the two-point correlation function.
+    float or array-like  Landy-Szalay xi(s).
     """
     dd = dd_of_s / (N * (N - 1))
     dr = dr_of_s / (N * Nr)
@@ -1048,17 +960,105 @@ def j0_bar(k, ri, delta_r):
 
 def cov_noPS_off_diag(ri, rj, delta_r):
     """
-    Computes the covariance between two spherical shells with inner radii ri and rj, both with thickness delta_r.
+    Covariance between two distinct spherical shells.
 
     Parameters
     ----------
-    ri : float
-        The inner radius of the first shell.
-    rj : float
-        The inner radius of the second shell.
-    delta_r : float
-        The thickness of both shells.
+    ri : float  Inner radius first shell.
+    rj : float  Inner radius second shell.
+    delta_r : float  Shell thickness.
 
+    Returns
+    -------
+    float  Off-diagonal covariance value.
+    """
+
+    cov_noPS_off_diag = (
+        18
+        / (np.pi * delta_r**2 * (12 * ri**2 + delta_r**2) * (12 * rj**2 + delta_r**2))
+        * (
+            2 * delta_r**2 * (ri + rj + abs(ri - rj))
+            - 2
+            * delta_r**2
+            * ((ri - rj) ** 2 * (ri + rj) + abs(ri - rj) ** 3)
+            / (ri - rj) ** 2
+            - ri
+            * delta_r
+            * (2.0 * delta_r + abs(ri - rj + delta_r) - abs(-ri + rj + delta_r))
+            - rj
+            * delta_r
+            * (2.0 * delta_r - abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
+            + 2
+            * ri
+            * rj
+            * (-2 * abs(ri - rj) + abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
+            + rj
+            * (
+                -2 * (ri + rj) ** 2
+                + (ri + rj - delta_r) ** 2
+                + (ri + rj + delta_r) ** 2
+                + 2 * (ri - rj) ** 2 * np.sign(ri - rj)
+                - (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
+                - (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
+            )
+            + ri
+            * (
+                -2 * (ri + rj) ** 2
+                + (ri + rj - delta_r) ** 2
+                + (ri + rj + delta_r) ** 2
+                - 2 * (ri - rj) ** 2 * np.sign(ri - rj)
+                + (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
+                + (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
+            )
+        )
+    )
+
+    return cov_noPS_off_diag
+
+
+def cov_noPS_diag(ri, delta_r):
+    return 6.0 / (12.0 * np.pi * ri**2 + np.pi * delta_r**3)
+
+
+def cov_noPS(ri, rj, delta_r):
+    if ri == rj:
+        return cov_noPS_diag(ri, delta_r)
+    elif (
+        ri != rj
+        and delta_r**2 / (ri - rj) ** 2 <= 1.0
+        and delta_r**2 / (ri + rj) ** 2 < 1.0
+    ):
+        return cov_noPS_off_diag(ri, rj, delta_r)
+
+
+def cov_noPS_vec(ri, rj, delta_r):
+    """
+    Vectorized version of cov_noPS: ri and rj can be scalars or arrays of any shape.
+    Applies cov_noPS_diag for diagonal, cov_noPS_off_diag for off-diagonal.
+    """
+    ri = np.asarray(ri)
+    rj = np.asarray(rj)
+    cov = np.zeros(np.broadcast(ri, rj).shape)
+
+    # Diagonal mask
+    diag_mask = np.isclose(ri, rj)
+    # Off-diagonal mask (where analytic formula is valid)
+    offdiag_mask = (~diag_mask) & (
+        (delta_r**2 / (ri - rj) ** 2 <= 1.0) & (delta_r**2 / (ri + rj) ** 2 < 1.0)
+    )
+
+    # Apply diagonal formula
+    cov[diag_mask] = cov_noPS_diag(ri[diag_mask], delta_r)
+    # Apply off-diagonal formula
+    cov[offdiag_mask] = cov_noPS_off_diag(ri[offdiag_mask], rj[offdiag_mask], delta_r)
+    # All other cases remain zero (or you can set to np.nan if you prefer)
+    return cov
+
+
+if __name__ == "__main__":
+    print(
+        "This module provides cosmology utilities and is not intended to be run directly."
+    )
     Returns
     -------
     float

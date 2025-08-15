@@ -170,17 +170,28 @@ def find_corrfunc_files(
     debug: bool = False,
 ) -> tuple[list, str]:
     """
-    Find all Corrfunc output files matching the given criteria in the specified directory.
-    Returns a tuple containing the list of matching files and a unique identifier.
+    Find all Corrfunc output files matching the given criteria in the specified directory; returns list and identifier.
 
-    Parameters:
-    -----------
-    [... same as before ...]
+    Parameters
+    ----------
+    directory : str  Directory to search.
+    pair_type : str, optional  Pair type filter (DD, DR, RR).
+    N : float, optional  Data count for matching.
+    rand_N : float, optional  Random sample count.
+    mumax : float, optional  Maximum mu.
+    mubins : int, optional  Number of mu bins.
+    smin : float, optional  Minimum separation.
+    smax : float, optional  Maximum separation.
+    sbinsize : float, optional  Separation bin size.
+    zmin : float, optional  Minimum redshift.
+    zmax : float, optional  Maximum redshift.
+    redshift_key : str, optional  Redshift key label (e.g. z0, zrsd).
+    pattern : str, optional  Regex pattern to pre-filter filenames.
+    debug : bool, optional  If True print mismatches.
 
-    Returns:
-    --------
-    tuple
-        (List of full paths to matching files, unique identifier string)
+    Returns
+    -------
+    tuple  (list of matching file paths, unique identifier string)
     """
     matching_files = []
 
@@ -260,20 +271,18 @@ def _extract_x_key_tmp(filename):
 
 def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None, zkey="zrsd"):
     """
-    Load JSON file paths into a dictionary with dynamic keys.
+    Load JSON file paths into a dict keyed by extracted labels.
 
-    Parameters:
-    -----------
-    json_dir : str
-        Directory containing JSON files
-    pattern : str, optional
-        Regex pattern to filter files (default: matches files with x followed by numbers)
-    key_extractor : callable, optional
-        Function to extract key from filename (default: extracts 'x10', 'x20', etc.)
+    Parameters
+    ----------
+    json_dir : str  Directory containing JSON files.
+    pattern : str, optional  Regex to filter filenames (default '.*x(\\d+)\\.json$').
+    key_extractor : callable, optional  Function extracting key from filename.
+    zkey : str, optional  Redshift key (unused passthrough for compatibility).
 
-    Returns:
-    --------
-    dict : Dictionary with extracted keys and full file paths
+    Returns
+    -------
+    dict  Mapping extracted key -> full JSON path.
     """
 
     # Default pattern to match files like 'narrow_z0_0.9_1.1_x10.json'
@@ -301,20 +310,17 @@ def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None, zkey="zrsd")
 
 def load_jsons_from_dir_tmp(json_dir, pattern=None, key_extractor=None):
     """
-    Load JSON file paths into a dictionary with dynamic keys.
+    Temporary variant of load_jsons_from_dir with alternate extractor.
 
-    Parameters:
-    -----------
-    json_dir : str
-        Directory containing JSON files
-    pattern : str, optional
-        Regex pattern to filter files (default: matches files with x followed by numbers)
-    key_extractor : callable, optional
-        Function to extract key from filename (default: extracts 'x10', 'x20', etc.)
+    Parameters
+    ----------
+    json_dir : str  Directory containing JSON files.
+    pattern : str, optional  Regex to filter filenames (default '.*x(\\d+)\\.json$').
+    key_extractor : callable, optional  Function extracting key from filename.
 
-    Returns:
-    --------
-    dict : Dictionary with extracted keys and full file paths
+    Returns
+    -------
+    dict  Mapping extracted key -> full JSON path.
     """
 
     # Default pattern to match files like 'narrow_z0_0.9_1.1_x10.json'
