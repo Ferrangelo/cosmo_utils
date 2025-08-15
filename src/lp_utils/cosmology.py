@@ -479,7 +479,32 @@ class Cosmology:
 
     def Pk2xiNL(self, s_arr, z=0, *args, **kwargs):
         def integrand(x, Px, r, xpiv=1):
-            return x**2 * self.coefficient_form(z, *args, **kwargs) * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4)
+            return (
+                x**2
+                * self.coefficient_form(z, *args, **kwargs)
+                * Px
+                / (2.0 * np.pi) ** 3
+                * j0(x * r)
+                * wgc(x, xpiv, 4)
+            )
+
+        s_arr = np.asarray(s_arr)
+        xi = []
+        for si in s_arr:
+            xi.append(integrate.simpson(integrand(self.k, self.P, si), self.k))
+        xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
+        return xi
+
+    def binned_xiNL(self, s_arr, delta_r, z=0, *args, **kwargs):
+        def integrand(x, Px, r, xpiv=1):
+            return (
+                x**2
+                * self.coefficient_form(z, *args, **kwargs)
+                * Px
+                / (2.0 * np.pi) ** 3
+                * j0_bar(x, r, delta_r)
+                * wgc(x, xpiv, 4)
+            )
 
         s_arr = np.asarray(s_arr)
         xi = []
@@ -490,20 +515,16 @@ class Cosmology:
 
     def Pk2d_xi_ds(self, s_arr, z=0):
         """
-        Computes the derivative of the linear two-point correlation function xi(s) with respect to s,
-        given a power spectrum P(k) and an array of separations s.
+        Computes the derivative of the linear two-point correlation function xi(s) with respect to s, given a power spectrum P(k) and an array of separations s.
 
         Parameters
         ----------
-        s_arr : array_like
-            Array of separations at which to compute the derivative of xi.
-        z : float, optional
-            Redshift at which to evaluate the growth factor (default is 0).
+        s_arr : array_like    Array of separations at which to compute the derivative of xi.
+        z : float, optional   Redshift at which to evaluate the growth factor (default is 0).
 
         Returns
         -------
-        d_xi_ds : ndarray
-            The derivative of the two-point correlation function xi(s) with respect to s.
+        d_xi_ds : ndarray    The derivative of the two-point correlation function xi(s) with respect to s.
         """
 
         s_arr = np.asarray(s_arr)
@@ -530,10 +551,10 @@ class Cosmology:
 
     def dxi_ds(self, s_arr, z=0):
         return np.gradient(self.Pk2xi(s_arr, z), s_arr, edge_order=2)
-    
+
     def dxiNL_ds(self, s_arr, z=0, *args, **kwargs):
         return np.gradient(self.Pk2xiNL(s_arr, z, *args, **kwargs), s_arr, edge_order=2)
-    
+
     def coefficient_form(self, z, *args, **kwargs):
         if len(args) >= 1:
             b10 = args[0]
@@ -574,37 +595,95 @@ class Cosmology:
             )
         )
         return sigma0_sq
-    
-    def Vs(ri, delta_r):
+
+    def sigmaP2(self, k, z, ng, b10=1.0, rsd=True):
         """
-        Computes the volume of a spherical shell with inner radius ri and thickness delta_r.
-        Eq. (7) of Phys. Rev. D 99, 123515 (2019)
-        """
-        return np.pi / 3 * (12. * ri**2 * delta_r + delta_r**3)
-    
-    def j0_bar(self, ri, delta_r):
-        """
-        Computes the average value of the spherical Bessel function j0 over a spherical shell of radius ri and thickness delta_r.
-        Eq. (8) of Phys. Rev. D 99, 123515 (2019)
-        
         Parameters
         ----------
-        ri : float
-            The inner radius of the shell.
-        delta_r : float
-            The thickness of the shell.
-        
+        k (float): Wavenumber at which to evaluate.
+        z (float): Redshift.
+        b10 (float, optional): Linear bias parameter (default 1.0).
+        ng (float, optional): Number density of galaxies (default 1.0).
+
         Returns
         -------
         float
-            The average value of j0 over the shell.
+            Value of SigmaP2 at (k, z).
         """
-        
-        r1 = ri - delta_r / 2.0
-        r2 = ri + delta_r / 2.0
-        return 4. * np.pi * (
-            r2**2 * j1(self.k * r2) - r1**2 * j1(self.k * r1) / self.k
-        ) / self.Vs(ri, delta_r)
+        D = self.growth_factor(z)
+        beta = 0.0
+        if rsd:
+            beta = self.growth_rate(z) / b10
+        # Interpolate P(k) if needed
+        P_interp = interp1d(
+            self.k, self.P, kind="cubic", bounds_error=False, fill_value=0.0
+        )
+
+        mu_grid = np.linspace(-1, 1, 200)
+
+        k_arr = np.atleast_1d(k)
+        result = []
+        for ki in k_arr:
+            Pk = P_interp(ki)
+            factor = D**2 * b10**2 * Pk * (1 + beta * mu_grid**2) ** 2
+            integrand = 2 * (factor**2 + 2 * factor / ng)
+            integral = np.trapezoid(integrand, mu_grid)
+            result.append(0.5 * integral)
+        return np.array(result)
+
+    def cov_int(self, riN, rjN, z, delta_rN, ng, b10=1.0, rsd=True, iterpolator=None):
+        # 1. Create k-array grid
+        k_grid = np.logspace(-3, 2, 1000)
+
+        # 2. Get sigmaP2 for all k
+        if iterpolator is not None:
+            sigmaP2_vals = iterpolator(k_grid)
+        else:
+            sigmaP2_vals = self.sigmaP2(k_grid, z, ng, b10, rsd)
+
+        # 3. Compute j0_bar for all k
+        j0_ri = j0_bar(k_grid, riN, delta_rN)
+        j0_rj = j0_bar(k_grid, rjN, delta_rN)
+
+        # 4. Compute integrand for all k
+        integrand = k_grid**2 * sigmaP2_vals * j0_ri * j0_rj / (2 * np.pi) ** 3
+
+        # 5. Integrate over k
+        # result = np.trapezoid(integrand, k_grid)
+        result = integrate.simpson(integrand, k_grid)
+        return 4 * np.pi * result
+
+    def cov_int_2d_vec(
+        self, riN, rjN, z, delta_rN, ng, b10=1.0, rsd=True, iterpolator=None
+    ):
+        """
+        Fully vectorized version of cov_int: riN and rjN can be 2D arrays (e.g., from meshgrid).
+        """
+        # k_grid is 1D
+        k_grid = np.logspace(-3, 2, 1000)
+
+        # sigmaP2_vals is 1D (shape: (Nk,))
+        if iterpolator is not None:
+            sigmaP2_vals = iterpolator(k_grid)
+        else:
+            sigmaP2_vals = self.sigmaP2(k_grid, z, ng, b10, rsd)
+
+        # j0_bar returns (Nk, Nri, Nrj) if riN and rjN are 2D
+        j0_ri = j0_bar(k_grid, riN, delta_rN)  # shape: (Nk, Nri, Nrj) or (Nk, Nri)
+        j0_rj = j0_bar(k_grid, rjN, delta_rN)  # shape: (Nk, Nri, Nrj) or (Nk, Nrj)
+
+        # If riN and rjN are 2D, j0_ri and j0_rj are (Nk, N, N)
+        # Broadcast sigmaP2_vals to (Nk, 1, 1)
+        sigmaP2_vals = sigmaP2_vals[:, None, None]
+
+        integrand = (
+            k_grid[:, None, None] ** 2 * sigmaP2_vals * j0_ri * j0_rj / (2 * np.pi) ** 3
+        )
+
+        # Integrate over k axis (axis=0)
+        result = integrate.simpson(integrand, k_grid, axis=0)
+        return 4 * np.pi * result
+
 
 def bacco_params(cosmo_dict, expfactor=1):
     """
@@ -884,24 +963,6 @@ def sigma0sq(z, Om=0.3, b10=1.0, b01=0.0, sigmav=6.0, sigma_p=0.0):
     return sigma0_sq
 
 
-def sigmaP2(z, ng, Om=0.3, b10=1.0, rsd=True):
-    """
-    TODO: This function is not yet implemented.
-    ng : (float) Number density of galaxies in the sample.
-    """
-    D = growth_factor(z, Om)
-    if rsd:
-        f = growth_rate(z, Om)
-        beta = f / b10
-    else:
-        beta = 0.0
-
-    def integrand(mu):
-        return (2 * D**2 * b10**2 * InterpPSL(k) * (1 + beta * mu**2) ** 2) / ng
-
-    return 1.0
-
-
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
     """
     Calculates the Landy-Szalay estimator for the two-point correlation function.
@@ -953,6 +1014,137 @@ def xi_natural(N, Nr, dd_of_s, rr_of_s):
     dd = dd_of_s / (N * (N - 1))
     rr = rr_of_s / (Nr * (Nr - 1))
     return dd / rr - 1
+
+
+def Vs(ri, delta_r):
+    """
+    Computes the volume of a spherical shell with inner radius ri and thickness delta_r.
+    Eq. (7) of Phys. Rev. D 99, 123515 (2019)
+    """
+    return np.pi / 3 * (12.0 * ri**2 * delta_r + delta_r**3)
+
+
+def j0_bar(k, ri, delta_r):
+    """
+    Computes the average value of the spherical Bessel function j0 over a spherical shell of radius ri and thickness delta_r.
+    Supports k (1D), ri (scalar, 1D, or 2D).
+    """
+    k = np.atleast_1d(k)
+    ri = np.asarray(ri)
+    r1 = ri - delta_r / 2.0
+    r2 = ri + delta_r / 2.0
+
+    # Broadcast k to match ri's shape
+    # If ri is (N, N), k[:, None, None] will broadcast to (Nk, N, N)
+    # If ri is (N,), k[:, None] will broadcast to (Nk, N)
+    k_shape = (k.size,) + (1,) * ri.ndim
+    k_b = k.reshape(k_shape)
+
+    numerator = r2**2 * j1(k_b * r2) - r1**2 * j1(k_b * r1)
+    denominator = k_b * Vs(ri, delta_r)
+    result = 4.0 * np.pi * numerator / denominator
+    return result
+
+
+def cov_noPS_off_diag(ri, rj, delta_r):
+    """
+    Computes the covariance between two spherical shells with inner radii ri and rj, both with thickness delta_r.
+
+    Parameters
+    ----------
+    ri : float
+        The inner radius of the first shell.
+    rj : float
+        The inner radius of the second shell.
+    delta_r : float
+        The thickness of both shells.
+
+    Returns
+    -------
+    float
+        The covariance between the two shells.
+    """
+
+    cov_noPS_off_diag = (
+        18
+        / (np.pi * delta_r**2 * (12 * ri**2 + delta_r**2) * (12 * rj**2 + delta_r**2))
+        * (
+            2 * delta_r**2 * (ri + rj + abs(ri - rj))
+            - 2
+            * delta_r**2
+            * ((ri - rj) ** 2 * (ri + rj) + abs(ri - rj) ** 3)
+            / (ri - rj) ** 2
+            - ri
+            * delta_r
+            * (2.0 * delta_r + abs(ri - rj + delta_r) - abs(-ri + rj + delta_r))
+            - rj
+            * delta_r
+            * (2.0 * delta_r - abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
+            + 2
+            * ri
+            * rj
+            * (-2 * abs(ri - rj) + abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
+            + rj
+            * (
+                -2 * (ri + rj) ** 2
+                + (ri + rj - delta_r) ** 2
+                + (ri + rj + delta_r) ** 2
+                + 2 * (ri - rj) ** 2 * np.sign(ri - rj)
+                - (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
+                - (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
+            )
+            + ri
+            * (
+                -2 * (ri + rj) ** 2
+                + (ri + rj - delta_r) ** 2
+                + (ri + rj + delta_r) ** 2
+                - 2 * (ri - rj) ** 2 * np.sign(ri - rj)
+                + (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
+                + (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
+            )
+        )
+    )
+
+    return cov_noPS_off_diag
+
+
+def cov_noPS_diag(ri, delta_r):
+    return 6.0 / (12.0 * np.pi * ri**2 + np.pi * delta_r**3)
+
+
+def cov_noPS(ri, rj, delta_r):
+    if ri == rj:
+        return cov_noPS_diag(ri, delta_r)
+    elif (
+        ri != rj
+        and delta_r**2 / (ri - rj) ** 2 <= 1.0
+        and delta_r**2 / (ri + rj) ** 2 < 1.0
+    ):
+        return cov_noPS_off_diag(ri, rj, delta_r)
+
+
+def cov_noPS_vec(ri, rj, delta_r):
+    """
+    Vectorized version of cov_noPS: ri and rj can be scalars or arrays of any shape.
+    Applies cov_noPS_diag for diagonal, cov_noPS_off_diag for off-diagonal.
+    """
+    ri = np.asarray(ri)
+    rj = np.asarray(rj)
+    cov = np.zeros(np.broadcast(ri, rj).shape)
+
+    # Diagonal mask
+    diag_mask = np.isclose(ri, rj)
+    # Off-diagonal mask (where analytic formula is valid)
+    offdiag_mask = (~diag_mask) & (
+        (delta_r**2 / (ri - rj) ** 2 <= 1.0) & (delta_r**2 / (ri + rj) ** 2 < 1.0)
+    )
+
+    # Apply diagonal formula
+    cov[diag_mask] = cov_noPS_diag(ri[diag_mask], delta_r)
+    # Apply off-diagonal formula
+    cov[offdiag_mask] = cov_noPS_off_diag(ri[offdiag_mask], rj[offdiag_mask], delta_r)
+    # All other cases remain zero (or you can set to np.nan if you prefer)
+    return cov
 
 
 if __name__ == "__main__":
