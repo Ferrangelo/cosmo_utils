@@ -82,6 +82,19 @@ def j0(x):
     """
     return spherical_jn(0, x)
 
+def j1(x):
+    """
+    Compute the spherical Bessel function of the first kind of order 1 for input x.
+
+    Parameters:
+        x (float or array-like): Input value(s).
+
+    Returns:
+        float or ndarray: The value(s) of the spherical Bessel function j1 at x.
+    """
+    return spherical_jn(1, x)
+
+
 
 def dj0(x):
     """
