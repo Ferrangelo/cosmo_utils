@@ -8,7 +8,8 @@ from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
 from lp_utils.utils import SPEED_OF_LIGHT, read_json, read_pk
-from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, j1, d_dr_j0_of_kr
+from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
+from lp_utils.lp_analysis import j0_bar
 
 
 class Cosmology:
@@ -554,75 +555,6 @@ class Cosmology:
             result.append(0.5 * integral)
         return np.array(result)
 
-    def cov_int(self, riN, rjN, z, delta_rN, ng, b10=1.0, rsd=True, iterpolator=None):
-        # 1. Create k-array grid
-        k_grid = np.logspace(-3, 2, 1000)
-
-        # 2. Get sigmaP2 for all k
-        if iterpolator is not None:
-            sigmaP2_vals = iterpolator(k_grid)
-        else:
-            sigmaP2_vals = self.sigmaP2(k_grid, z, ng, b10, rsd)
-
-        # 3. Compute j0_bar for all k
-        j0_ri = j0_bar(k_grid, riN, delta_rN)
-        j0_rj = j0_bar(k_grid, rjN, delta_rN)
-
-        # 4. Compute integrand for all k
-        integrand = k_grid**2 * sigmaP2_vals * j0_ri * j0_rj / (2 * np.pi) ** 3
-
-        # 5. Integrate over k
-        # result = np.trapezoid(integrand, k_grid)
-        result = integrate.simpson(integrand, k_grid)
-        return 4 * np.pi * result
-
-    def cov_int_2d_vec(
-        self, riN, rjN, z, delta_rN, ng, b10=1.0, rsd=True, iterpolator=None
-    ):
-        """
-        Fully vectorized covariance integral for 2D grids.
-
-        Parameters
-        ----------
-        riN : array_like  Radial bin centers (can be 2D).
-        rjN : array_like  Radial bin centers (can be 2D).
-        z : float  Redshift.
-        delta_rN : float  Bin thickness.
-        ng : float  Number density.
-        b10 : float, optional  Linear bias (default 1.0).
-        rsd : bool, optional  Include RSD (default True).
-        iterpolator : callable, optional  Precomputed SigmaP2(k) interpolator.
-
-        Returns
-        -------
-        ndarray  Covariance matrix/grid.
-        """
-        # k_grid is 1D
-        k_grid = np.logspace(-3, 2, 1000)
-
-        # sigmaP2_vals is 1D (shape: (Nk,))
-        if iterpolator is not None:
-            sigmaP2_vals = iterpolator(k_grid)
-        else:
-            sigmaP2_vals = self.sigmaP2(k_grid, z, ng, b10, rsd)
-
-        # j0_bar returns (Nk, Nri, Nrj) if riN and rjN are 2D
-        j0_ri = j0_bar(k_grid, riN, delta_rN)  # shape: (Nk, Nri, Nrj) or (Nk, Nri)
-        j0_rj = j0_bar(k_grid, rjN, delta_rN)  # shape: (Nk, Nri, Nrj) or (Nk, Nrj)
-
-        # If riN and rjN are 2D, j0_ri and j0_rj are (Nk, N, N)
-        # Broadcast sigmaP2_vals to (Nk, 1, 1)
-        sigmaP2_vals = sigmaP2_vals[:, None, None]
-
-        integrand = (
-            k_grid[:, None, None] ** 2 * sigmaP2_vals * j0_ri * j0_rj / (2 * np.pi) ** 3
-        )
-
-        # Integrate over k axis (axis=0)
-        result = integrate.simpson(integrand, k_grid, axis=0)
-        return 4 * np.pi * result
-
-
 def bacco_params(cosmo_dict, expfactor=1):
     """
     Build BACCO parameter dictionary.
@@ -928,133 +860,6 @@ def xi_natural(N, Nr, dd_of_s, rr_of_s):
     dd = dd_of_s / (N * (N - 1))
     rr = rr_of_s / (Nr * (Nr - 1))
     return dd / rr - 1
-
-
-def Vs(ri, delta_r):
-    """
-    Computes the volume of a spherical shell with inner radius ri and thickness delta_r.
-    Eq. (7) of Phys. Rev. D 99, 123515 (2019)
-    """
-    return np.pi / 3 * (12.0 * ri**2 * delta_r + delta_r**3)
-
-
-def j0_bar(k, ri, delta_r):
-    """
-    Computes the average value of the spherical Bessel function j0 over a spherical shell of radius ri and thickness delta_r.
-    Supports k (1D), ri (scalar, 1D, or 2D).
-    """
-    k = np.atleast_1d(k)
-    ri = np.asarray(ri)
-    r1 = ri - delta_r / 2.0
-    r2 = ri + delta_r / 2.0
-
-    # Broadcast k to match ri's shape
-    # If ri is (N, N), k[:, None, None] will broadcast to (Nk, N, N)
-    # If ri is (N,), k[:, None] will broadcast to (Nk, N)
-    k_shape = (k.size,) + (1,) * ri.ndim
-    k_b = k.reshape(k_shape)
-
-    numerator = r2**2 * j1(k_b * r2) - r1**2 * j1(k_b * r1)
-    denominator = k_b * Vs(ri, delta_r)
-    result = 4.0 * np.pi * numerator / denominator
-    return result
-
-
-def cov_noPS_off_diag(ri, rj, delta_r):
-    """
-    Covariance between two distinct spherical shells.
-
-    Parameters
-    ----------
-    ri : float  Inner radius first shell.
-    rj : float  Inner radius second shell.
-    delta_r : float  Shell thickness.
-
-    Returns
-    -------
-    float  Off-diagonal covariance value.
-    """
-
-    cov_noPS_off_diag = (
-        18
-        / (np.pi * delta_r**2 * (12 * ri**2 + delta_r**2) * (12 * rj**2 + delta_r**2))
-        * (
-            2 * delta_r**2 * (ri + rj + abs(ri - rj))
-            - 2
-            * delta_r**2
-            * ((ri - rj) ** 2 * (ri + rj) + abs(ri - rj) ** 3)
-            / (ri - rj) ** 2
-            - ri
-            * delta_r
-            * (2.0 * delta_r + abs(ri - rj + delta_r) - abs(-ri + rj + delta_r))
-            - rj
-            * delta_r
-            * (2.0 * delta_r - abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
-            + 2
-            * ri
-            * rj
-            * (-2 * abs(ri - rj) + abs(ri - rj + delta_r) + abs(-ri + rj + delta_r))
-            + rj
-            * (
-                -2 * (ri + rj) ** 2
-                + (ri + rj - delta_r) ** 2
-                + (ri + rj + delta_r) ** 2
-                + 2 * (ri - rj) ** 2 * np.sign(ri - rj)
-                - (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
-                - (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
-            )
-            + ri
-            * (
-                -2 * (ri + rj) ** 2
-                + (ri + rj - delta_r) ** 2
-                + (ri + rj + delta_r) ** 2
-                - 2 * (ri - rj) ** 2 * np.sign(ri - rj)
-                + (-ri + rj + delta_r) ** 2 * np.sign(ri - rj - delta_r)
-                + (ri - rj + delta_r) ** 2 * np.sign(ri - rj + delta_r)
-            )
-        )
-    )
-
-    return cov_noPS_off_diag
-
-
-def cov_noPS_diag(ri, delta_r):
-    return 6.0 / (12.0 * np.pi * ri**2 + np.pi * delta_r**3)
-
-
-def cov_noPS(ri, rj, delta_r):
-    if ri == rj:
-        return cov_noPS_diag(ri, delta_r)
-    elif (
-        ri != rj
-        and delta_r**2 / (ri - rj) ** 2 <= 1.0
-        and delta_r**2 / (ri + rj) ** 2 < 1.0
-    ):
-        return cov_noPS_off_diag(ri, rj, delta_r)
-
-
-def cov_noPS_vec(ri, rj, delta_r):
-    """
-    Vectorized version of cov_noPS: ri and rj can be scalars or arrays of any shape.
-    Applies cov_noPS_diag for diagonal, cov_noPS_off_diag for off-diagonal.
-    """
-    ri = np.asarray(ri)
-    rj = np.asarray(rj)
-    cov = np.zeros(np.broadcast(ri, rj).shape)
-
-    # Diagonal mask
-    diag_mask = np.isclose(ri, rj)
-    # Off-diagonal mask (where analytic formula is valid)
-    offdiag_mask = (~diag_mask) & (
-        (delta_r**2 <= (ri - rj) ** 2) & (delta_r**2  < (ri + rj) ** 2)
-    )
-
-    # Apply diagonal formula
-    cov[diag_mask] = cov_noPS_diag(ri[diag_mask], delta_r)
-    # Apply off-diagonal formula
-    cov[offdiag_mask] = cov_noPS_off_diag(ri[offdiag_mask], rj[offdiag_mask], delta_r)
-    # All other cases remain zero (or you can set to np.nan if you prefer)
-    return cov
 
 
 if __name__ == "__main__":
