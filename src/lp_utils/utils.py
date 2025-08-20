@@ -32,6 +32,7 @@ def set_paths():
         raygal_test_path,
     )
 
+
 def read_pk(filename):
     """
     Read a power spectrum file and return its contents.
@@ -41,9 +42,12 @@ def read_pk(filename):
     k, Pk = np.loadtxt(pk_dir / filename, dtype=float, comments="#").T
     return k, Pk
 
-def read_json(filename):
+
+def read_json(filename, type=None):
     # Get the package's config directory
     config_dir = Path(__file__).parent / "config"
+    if type == "setup_fit":
+        config_dir = config_dir / "setup_fit"
     cosmo_file = config_dir / filename
 
     with open(cosmo_file, "r", encoding="utf-8") as f:
@@ -301,7 +305,7 @@ def load_jsons_from_dir(json_dir, pattern=None, key_extractor=None, zkey="zrsd")
 
         # Check if file matches pattern
         if re.match(pattern, filename):
-            key = key_extractor(filename, zkey=None)
+            key = key_extractor(filename, zkey)
             if key:
                 jsons[key] = str(file_path)
 
