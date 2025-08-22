@@ -170,9 +170,9 @@ class Cosmology:
                     "Rescaling the power spectrum to match the provided sigma8."
                 )
                 self.P = change_sigma8(self.k, self.Pk, self.sigma8)
-                print("--------- After rescaling ---------")
+                print("\n--------- After rescaling ---------")
                 print(f"sigma8 = {self.sigma8:.8f}")
-                print(f"sigma8 from Pk = {compute_sigma8(self.k, self.P):.8f}")
+                print(f"sigma8 from Pk = {compute_sigma8(self.k, self.P):.8f}\n")
 
     def E_late_times(self, z):
         """
