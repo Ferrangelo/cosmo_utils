@@ -226,7 +226,7 @@ def main():
             logging.info("Bias / sample std (if fiducial provided): %s", str(agg.bias_over_sigma))
             logging.info("Reduced chi^2 (mean over fits): %.3f", agg.chi2_reduced_mean)
             logging.info("KS normality p-value (LP standardized): %s", str(agg.ks_lp_pvalue))
-            logging.info("KS chi2 p-value (LP standardized): %s", str(agg.ks_chi2_pvalue))
+            logging.info("KS chi2 p-value: %s", str(agg.ks_chi2_pvalue))
 
             if not np.isnan(agg.std_lp) and not np.isnan(agg.mean_sigma_lp):
                 ratio = agg.std_lp / agg.mean_sigma_lp
