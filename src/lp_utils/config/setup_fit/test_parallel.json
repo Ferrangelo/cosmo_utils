@@ -1,0 +1,16 @@
+{
+    "sim": "Raygal",
+    "narrow": true,
+    "halos": false,
+    "zbin": "0.9_1.1",
+    "z_eff_Vol_js": "raygal_zeff_particles.json",
+    "scalerange": [40, 44, 48, 52, 56, 60],
+    "poly_order": [5, 6, 7, 8, 9],
+    "LP_guess": 100.0,
+    "delta_rN": 2,
+    "b10Fid": 1.0,
+    "N": 1.0e7,
+    "n_realizations": 5000,
+    "choleskey": true,
+    "output_folder": "/home/anferrar/Code/lp/lp_utils/outputs/setup_fit_par"
+}
