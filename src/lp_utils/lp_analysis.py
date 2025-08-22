@@ -810,6 +810,7 @@ class AggregateResults:
     mean_sigma_lp: float
     bias_over_sigma: float
     ks_lp_pvalue: float
+    ks_chi2_pvalue: float
     chi2_reduced_mean: float
     lp_values: np.ndarray
     sigma_lp_values: np.ndarray
@@ -836,6 +837,16 @@ def aggregate_lp_statistics(
     else:
         ks_p = float("nan")
     chi2_reduced = [r.chi2 / r.dof for r in successes if r.dof > 0]
+    # KS test for chi^2 distribution (requires consistent dof across realizations)
+    chi2_vals = np.array([r.chi2 for r in successes if r.dof > 0])
+    dofs = np.array([r.dof for r in successes if r.dof > 0])
+    if chi2_vals.size > 3 and np.all(dofs == dofs[0]):
+        try:
+            _, ks_chi2_p = stats.kstest(chi2_vals, "chi2", args=(int(dofs[0]),))
+        except Exception:
+            ks_chi2_p = float("nan")
+    else:
+        ks_chi2_p = float("nan")
     chi2_reduced_mean = float(np.mean(chi2_reduced)) if chi2_reduced else float("nan")
     return AggregateResults(
         n_total=len(results),
@@ -846,6 +857,7 @@ def aggregate_lp_statistics(
         mean_sigma_lp=mean_sigma_lp,
         bias_over_sigma=bias_over_sigma,
         ks_lp_pvalue=ks_p,
+        ks_chi2_pvalue=ks_chi2_p,
         chi2_reduced_mean=chi2_reduced_mean,
         lp_values=lp_vals,
         sigma_lp_values=sigma_lp_vals,
