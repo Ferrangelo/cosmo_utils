@@ -257,19 +257,21 @@ def cov_noPS_vec(ri, rj, delta_r):
     """
     ri = np.asarray(ri)
     rj = np.asarray(rj)
-    cov = np.zeros(np.broadcast(ri, rj).shape)
+    # Broadcast inputs to a common shape to safely apply boolean masks
+    Ri, Rj = np.broadcast_arrays(ri, rj)
+    cov = np.zeros_like(Ri, dtype=float)
 
     # Diagonal mask
-    diag_mask = np.isclose(ri, rj)
+    diag_mask = np.isclose(Ri, Rj)
     # Off-diagonal mask (where analytic formula is valid)
     offdiag_mask = (~diag_mask) & (
-        (delta_r**2 <= (ri - rj) ** 2) & (delta_r**2 < (ri + rj) ** 2)
+        (delta_r**2 <= (Ri - Rj) ** 2) & (delta_r**2 < (Ri + Rj) ** 2)
     )
 
     # Apply diagonal formula
-    cov[diag_mask] = cov_noPS_diag(ri[diag_mask], delta_r)
+    cov[diag_mask] = cov_noPS_diag(Ri[diag_mask], delta_r)
     # Apply off-diagonal formula
-    cov[offdiag_mask] = cov_noPS_off_diag(ri[offdiag_mask], rj[offdiag_mask], delta_r)
+    cov[offdiag_mask] = cov_noPS_off_diag(Ri[offdiag_mask], Rj[offdiag_mask], delta_r)
     # All other cases remain zero (or you can set to np.nan if you prefer)
     return cov
 
