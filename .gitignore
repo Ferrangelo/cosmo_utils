@@ -11,3 +11,6 @@ wheels/
 
 # Playground files
 zero.ipynb
+
+# output files
+outputs/
