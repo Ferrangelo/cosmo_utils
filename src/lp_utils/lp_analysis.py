@@ -26,6 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional, Union, Sequence
 
+import warnings
 import numpy as np
 import numpy.linalg as npl
 from scipy import integrate, stats
@@ -611,6 +612,7 @@ def gls_polynomial_fit_cholesky(
             f"QR solve failed: {e}",
         )
 
+
 @dataclass
 class ExtremumResult:
     dip: float
@@ -719,6 +721,7 @@ def propagate_lp_uncertainty(
     sigma_dip = float(np.sqrt(g_dip @ param_cov_full @ g_dip))
     sigma_peak = float(np.sqrt(g_peak @ param_cov_full @ g_peak))
     sigma_lp = float(np.sqrt(g_lp @ param_cov_full @ g_lp))
+           
     return LPUncertainty(sigma_dip, sigma_peak, sigma_lp, g_dip, g_peak, g_lp)
 
 
@@ -751,8 +754,11 @@ def process_realization(
     Returns dip/peak/LP and uncertainties. Failures (e.g. missing extrema) marked success=False.
     """
     model = PolynomialModel(order=order, active_mask=model_mask)
-    fit = gls_polynomial_fit_cholesky(s, y, covariance, model) if cholesky else gls_polynomial_fit(s, y, covariance, model)
-        
+    if cholesky:
+        fit = gls_polynomial_fit_cholesky(s, y, covariance, model)
+    else: 
+        fit = gls_polynomial_fit(s, y, covariance, model)
+
     if not fit.success:
         return RealizationResult(
             np.nan,
@@ -786,6 +792,20 @@ def process_realization(
     mask = np.array(model.active_mask, dtype=bool)
     full_cov[np.ix_(mask, mask)] = fit.param_cov
     unc = propagate_lp_uncertainty(coeffs, full_cov, ext.dip, ext.peak)
+    # If any uncertainty is NaN, treat this realization as a failure
+    if not np.all(np.isfinite([unc.sigma_dip, unc.sigma_peak, unc.sigma_lp])):
+        return RealizationResult(
+            fit.chi2,
+            fit.dof,
+            ext.dip,
+            ext.peak,
+            ext.lp,
+            unc.sigma_dip,
+            unc.sigma_peak,
+            unc.sigma_lp,
+            False,
+            "NaN uncertainty (sigma_dip/peak/lp)",
+        )
     return RealizationResult(
         fit.chi2,
         fit.dof,
