@@ -439,6 +439,50 @@ def write_lp_setup_results_json(
     return output_path.resolve()
 
 
+def load_setup_files_flat(directory, pattern=None):
+    """
+    Returns:
+    --------
+    dict : Dictionary with (zbin, binsize, scalerange, polyorder) tuple keys
+    """
+    if pattern is None:
+        pattern = r"Raygal_narrow_zbin_([0-9.]+_[0-9.]+|\d+)_binsize(\d+)_scalerange(\d+)_polyorder(\d+)\.json"
+
+    flat_data = {}
+    directory = Path(directory)
+
+    # Let the regex filter what we want
+    for file_path in directory.glob("*.json"):
+        filename = file_path.name
+        m = re.match(pattern, filename)
+        if not m:
+            continue
+
+        zbin_raw = m.group(1)
+        # int bin index or z-range like "0.9_1.1"
+        try:
+            zbin = int(zbin_raw)
+        except ValueError:
+            if "_" in zbin_raw:
+                zmin_str, zmax_str = zbin_raw.split("_", 1)
+                zbin = (float(zmin_str), float(zmax_str))
+            else:
+                zbin = zbin_raw  # fallback
+
+        binsize = int(m.group(2))
+        scalerange = int(m.group(3))
+        polyorder = int(m.group(4))
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            flat_data[(zbin, binsize, scalerange, polyorder)] = data
+        except Exception as e:
+            print(f"Error loading {filename}: {e}")
+
+    return flat_data
+
+
 if __name__ == "__main__":
     print(
         "This module provides utilities for handling cosmology and Corrfunc files and is not intended to be run directly."
