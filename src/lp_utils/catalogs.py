@@ -330,6 +330,36 @@ def read_test_file_and_plot(filepath):
             plt.grid(True)
             plt.tight_layout()
 
+def read_and_assign_fits_col_to_df(key, hdulist, df=None):
+    """
+    Reads a column from a FITS file HDU and assigns it to a Polars DataFrame.
+
+    Parameters
+    ----------
+    key : str
+        The name of the column to read from the FITS file.
+    hdulist : astropy.io.fits.HDUList
+        The HDU list object containing the FITS file data.
+    df : polars.DataFrame, optional
+        An existing Polars DataFrame to which the column will be added. If None, a new DataFrame is created.
+
+    Returns
+    -------
+    polars.DataFrame
+        A DataFrame with the specified column added.
+    """
+    print(f"Reading {key}...")
+    col = hdulist[1].data[key]
+    print(f"Adding {key} to dataframe...")
+    if df is None:
+        new_df = pl.DataFrame({key: col.tolist()})
+    else:
+        new_df = df.with_columns(pl.Series(name=key, values=col.tolist()))
+    del col
+    return new_df
+
+
+
 
 if __name__ == "__main__":
     print(
