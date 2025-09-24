@@ -1,6 +1,7 @@
 import copy
 import os
 import re
+from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -253,14 +254,19 @@ def get_output_filename(type, narrow, filter_z, zmin, zmax, N_particles, suffix)
 
 
 def write_df_final_output(df_final, output_path, test_output_path):
+    filename = "master_catalog400M_boxlen2625_n4096_lcdmw7v2_00000_narrow_lambda_sachs_part_0.000010_clean_goodformat.fits"
+    extension = Path(filename).suffix
     print(f"Writing output in {output_path}")
-    (
-        df_final.write_csv(
-            output_path,
-            separator=" ",
-            include_header=False,
+    if extension == ".parquet":
+        df_final.write_parquet(output_path)
+    else:
+        (
+            df_final.write_csv(
+                output_path,
+                separator=" ",
+                include_header=False,
+            )
         )
-    )
 
     print(f"Writing test output in {test_output_path}")
     nsample = int(100000)
@@ -304,19 +310,23 @@ def read_test_file_and_plot(filepath):
     b1 = None
     z = None
 
-    for col1, col2 in [("angle1", "angle2"), ("RA", "DEC"), ("beta1", "beta2")]:
+    for col1, col2 in [
+        ("angle1", "angle2"),
+        ("RA", "DEC"),
+        ("beta1", "beta2"),
+        ("theta1", "theta2"),
+    ]:
         if col1 in samp_df.columns and col2 in samp_df.columns:
             b1 = samp_df[col1]
             b2 = samp_df[col2]
-            break
 
-    if b1 is not None:
-        plt.figure(figsize=(3, 3))
-        plt.scatter(b1, b2, s=0.1)
-        plt.title("Raygal angles distribution (rotated)")
-        plt.xlabel(r"angle1", fontsize=9)
-        plt.ylabel(r"angle1", fontsize=9)
-        plt.tight_layout()
+        if b1 is not None:
+            plt.figure(figsize=(3, 3))
+            plt.scatter(b1, b2, s=0.1)
+            plt.title("Raygal angles distribution (rotated)")
+            plt.xlabel(col1, fontsize=9)
+            plt.ylabel(col1, fontsize=9)
+            plt.tight_layout()
 
     for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z"]:
         if col3 in samp_df.columns:
@@ -329,6 +339,7 @@ def read_test_file_and_plot(filepath):
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
+
 
 def read_and_assign_fits_col_to_df(key, hdulist, df=None):
     """
@@ -357,8 +368,6 @@ def read_and_assign_fits_col_to_df(key, hdulist, df=None):
         new_df = df.with_columns(pl.Series(name=key, values=col.tolist()))
     del col
     return new_df
-
-
 
 
 if __name__ == "__main__":
