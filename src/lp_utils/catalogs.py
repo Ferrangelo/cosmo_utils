@@ -57,7 +57,8 @@ def filter_catalog(
         if zmin is None or zmax is None:
             raise ValueError("zmin and zmax must be provided when filter_z is True")
 
-        zcols = [col for col in df.columns if col.startswith("z")]
+        schema = df.collect_schema()
+        zcols = [col for col in schema.names() if col.startswith("z")]
         if not zcols:
             raise ValueError("No z column found")
 
