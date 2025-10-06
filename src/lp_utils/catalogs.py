@@ -258,8 +258,7 @@ def get_output_filename(type, narrow, filter_z, zmin, zmax, N_particles, suffix)
 
 
 def write_df_final_output(df_final, output_path, test_output_path):
-    filename = "master_catalog400M_boxlen2625_n4096_lcdmw7v2_00000_narrow_lambda_sachs_part_0.000010_clean_goodformat.fits"
-    extension = Path(filename).suffix
+    extension = Path(output_path).suffix
     print(f"Writing output in {output_path}")
     if extension == ".parquet":
         df_final.write_parquet(output_path)
@@ -310,8 +309,6 @@ def check_correct_filtering(
 
 def read_test_file_and_plot(filepath):
     samp_df = pl.read_parquet(filepath)
-    b1 = None
-    b1 = None
     z = None
 
     for col1, col2 in [
@@ -320,6 +317,9 @@ def read_test_file_and_plot(filepath):
         ("beta1", "beta2"),
         ("theta1", "theta2"),
     ]:
+
+        b1 = None
+        b2 = None
         if col1 in samp_df.columns and col2 in samp_df.columns:
             b1 = samp_df[col1]
             b2 = samp_df[col2]
@@ -329,7 +329,7 @@ def read_test_file_and_plot(filepath):
             plt.scatter(b1, b2, s=0.1)
             plt.title("Angles distribution")
             plt.xlabel(col1, fontsize=9)
-            plt.ylabel(col1, fontsize=9)
+            plt.ylabel(col2, fontsize=9)
             plt.tight_layout()
 
     for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z"]:
