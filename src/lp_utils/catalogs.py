@@ -45,13 +45,14 @@ def filter_catalog(
     zmax=None,
     zkey=None,
     angle_filter=True,
+    angle_keys=('beta1', 'beta2')
 ):
     if not narrow:
         return df.filter(pl.col("z0").is_between(0.05, 0.465))
 
     filters = []
     if angle_filter:
-        filters.extend(filters_angles(df, angle1min, angle2min, width, height))
+        filters.extend(filters_angles(df, angle1min, angle2min, width, height, angle_keys))
 
     if filter_z:
         if zmin is None or zmax is None:
@@ -82,7 +83,7 @@ def filter_catalog(
     return df.filter(pl.all_horizontal(filters))
 
 
-def filters_angles(df, angle1min=None, angle2min=None, width=None, height=None):
+def filters_angles(df, angle1min=None, angle2min=None, width=None, height=None, angle_keys=('beta1', 'beta2')):
     rect_params = read_json("params_rectangle_angles.json")
 
     angle1min = angle1min if angle1min is not None else rect_params["b1min"]
@@ -90,8 +91,10 @@ def filters_angles(df, angle1min=None, angle2min=None, width=None, height=None):
     width = width if width is not None else rect_params["width"]
     height = height if height is not None else rect_params["height"]
 
-    angle1key = df.collect_schema().names()[0]  # ok for both lazy and dataframes
-    angle2key = df.collect_schema().names()[1]
+    # angle1key = df.collect_schema().names()[0]  # ok for both lazy and dataframes
+    # angle2key = df.collect_schema().names()[1]
+    angle1key = angle_keys[0]  # ok for both lazy and dataframes
+    angle2key = angle_keys[1]  # ok for both lazy and dataframes
     print(angle1key, angle2key)
     filters = [
         pl.col(angle1key).is_between(angle1min, angle1min + width),
