@@ -324,7 +324,7 @@ def read_test_file_and_plot(filepath):
         if b1 is not None:
             plt.figure(figsize=(3, 3))
             plt.scatter(b1, b2, s=0.1)
-            plt.title("Raygal angles distribution (rotated)")
+            plt.title("Angles distribution")
             plt.xlabel(col1, fontsize=9)
             plt.ylabel(col1, fontsize=9)
             plt.tight_layout()
