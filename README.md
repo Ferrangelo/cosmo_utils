@@ -8,11 +8,10 @@ Utilities for working with catalogs (mostly [Raygal lightcones](https://cosmo.ob
 
 ## Package layout
 
-- Core
-  - [`cosmo_utils.utils`](src/cosmo_utils/utils.py) — I/O helpers (JSON, PK), path utilities, Corrfunc filename parsing, result writers 
-  - [`cosmo_utils.cosmology`](src/cosmo_utils/cosmology.py) — cosmology calculations (see [`cosmology.Cosmology`](src/cosmo_utils/cosmology.py))
-  - [`cosmo_utils.filters_et_functions`](src/cosmo_utils/filters_et_functions.py) — Special functions and useful filters
-  - [`cosmo_utils.catalogs`](src/cosmo_utils/catalogs.py) — catalog retrieval, filtering, sampling, and small plotting helpers
+- [`cosmo_utils.utils`](src/cosmo_utils/utils.py) — I/O helpers (JSON, PK), path utilities, Corrfunc filename parsing, result writers 
+- [`cosmo_utils.cosmology`](src/cosmo_utils/cosmology.py) — cosmology calculations (see [`cosmology.Cosmology`](src/cosmo_utils/cosmology.py))
+- [`cosmo_utils.filters_et_functions`](src/cosmo_utils/filters_et_functions.py) — Special functions and useful filters
+- [`cosmo_utils.catalogs`](src/cosmo_utils/catalogs.py) — catalog retrieval, filtering, sampling, and small plotting helpers
   
 Configuration files (JSON) are expected under:
 - [`src/cosmo_utils/config`](src/cosmo_utils/config)
