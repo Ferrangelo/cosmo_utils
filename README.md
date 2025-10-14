@@ -18,6 +18,13 @@ Configuration files (JSON) are expected under:
 
 ## Installation
 
+Clone the repository and install in editable mode:
+
+```bash
+git clone Ferrangelo/cosmo_utils.git
+cd cosmo_utils
+```
+
 Using uv:
 ```bash
 # From repository root
@@ -27,3 +34,4 @@ uv pip install -e .
 Using pip:
 ```bash
 python -m pip install -e
+```
