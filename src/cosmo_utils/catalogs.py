@@ -8,7 +8,7 @@ import polars as pl
 from matplotlib import pyplot as plt
 from scipy.spatial.transform import Rotation
 
-from lp_utils.utils import read_json
+from cosmo_utils.utils import read_json
 
 
 def corrfunc_angles_phi_neg(df, angle1_key, angle2_key):
