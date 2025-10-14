@@ -1,7 +1,5 @@
-### cosmo_utils
-The repository contains utilities to work with catalogs and Utilities for basic cosmology computations such as distances, volumes, growth factor, growth rate, P(k)-xi etc...
-
-Utilities for cosmological computations and working with catalogs (mostly [Raygal lightcones](https://cosmo.obspm.fr/public-datasets/raygalgroupsims-relativistic-halo-catalogs/))
+# cosmo_utils
+Utilities for working with catalogs (mostly [Raygal lightcones](https://cosmo.obspm.fr/public-datasets/raygalgroupsims-relativistic-halo-catalogs/)) and perform basic cosmology computations such as distances, volumes, growth factor, growth rate, P(k)-xi etc...
 
 - Catalog loading/filtering and filename metadata parsing
 - Corrfunc pair-count filename decoding and retrieval 
@@ -17,7 +15,7 @@ Utilities for cosmological computations and working with catalogs (mostly [Rayga
   - [`cosmo_utils.catalogs`](src/cosmo_utils/catalogs.py) — catalog retrieval, filtering, sampling, and small plotting helpers
   
 Configuration files (JSON) are expected under:
-- [`src/lp_utils/config`](src/lp_utils/config
+- [`src/cosmo_utils/config`](src/cosmo_utils/config)
 
 ## Installation
 
