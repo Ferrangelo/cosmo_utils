@@ -1,7 +1,7 @@
 [project]
-name = "lp-utils"
+name = "cosmo-utils"
 version = "0.1.0"
-description = "Utilities BAO Linear Point analysis (catalogues, covariance matrices, cosmology computations etc.)"
+description = "Utilities to work with simulated galaxy catalogs and perform basic cosmological computations"
 readme = "README.md"
 authors = [
     { name = "Angelo Ferrari", email = "anferrar@bo.infn.it" }
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lp-utils = "lp_utils:main"
+cosmo-utils = "lp_utils:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -26,7 +26,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "lp-utils",
+    "cosmo-utils",
 ]
 
 [tool.uv.sources]
