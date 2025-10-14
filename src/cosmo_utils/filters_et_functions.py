@@ -78,6 +78,7 @@ def j0(x):
     """
     return spherical_jn(0, x)
 
+
 def j1(x):
     """
     Spherical Bessel function j1(x).
@@ -91,7 +92,6 @@ def j1(x):
     float or ndarray  j1(x).
     """
     return spherical_jn(1, x)
-
 
 
 def dj0(x):
@@ -108,6 +108,7 @@ def dj0(x):
     """
     return spherical_jn(0, x, derivative=True)
 
+
 def d_dr_j0_of_kr(k, r):
     """
     Derivative with respect to r of j0(k r).
@@ -122,6 +123,29 @@ def d_dr_j0_of_kr(k, r):
     float or ndarray  d/dr j0(k r).
     """
     return k * dj0(k * r)
+
+
+def j0_bar(k, ri, delta_r):
+    """
+    Computes the average value of the spherical Bessel function j0 over a spherical shell of radius ri and thickness delta_r.
+    Supports k (1D), ri (scalar, 1D, or 2D).
+    """
+    from cosmo_utils.cosmology import Vs
+    k = np.atleast_1d(k)
+    ri = np.asarray(ri)
+    r1 = ri - delta_r / 2.0
+    r2 = ri + delta_r / 2.0
+
+    # Broadcast k to match ri's shape
+    # If ri is (N, N), k[:, None, None] will broadcast to (Nk, N, N)
+    # If ri is (N,), k[:, None] will broadcast to (Nk, N)
+    k_shape = (k.size,) + (1,) * ri.ndim
+    k_b = k.reshape(k_shape)
+
+    numerator = r2**2 * j1(k_b * r2) - r1**2 * j1(k_b * r1)
+    denominator = k_b * Vs(ri, delta_r)
+    result = 4.0 * np.pi * numerator / denominator
+    return result
 
 
 if __name__ == "__main__":

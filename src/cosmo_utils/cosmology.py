@@ -7,9 +7,9 @@ import mcfit
 from scipy.special import hyp2f1
 from scipy.optimize import fsolve
 
-from lp_utils.utils import SPEED_OF_LIGHT, read_json, read_pk
-from lp_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
-from lp_utils.lp_analysis import j0_bar
+from cosmo_utils.utils import SPEED_OF_LIGHT, read_json, read_pk
+from cosmo_utils.filters_et_functions import top_hat_filter, wgc, j0, d_dr_j0_of_kr
+from cosmo_utils.filters_et_functions import j0_bar
 
 
 class Cosmology:
@@ -555,6 +555,7 @@ class Cosmology:
             result.append(0.5 * integral)
         return np.array(result)
 
+
 def bacco_params(cosmo_dict, expfactor=1):
     """
     Build BACCO parameter dictionary.
@@ -813,6 +814,14 @@ def sigma0sq(z, Om=0.3, b10=1.0, b01=0.0, sigmav=6.0, sigma_p=0.0):
         )
     )
     return sigma0_sq
+
+
+def Vs(ri, delta_r):
+    """
+    Computes the volume of a spherical shell with inner radius ri and thickness delta_r.
+    Eq. (7) of Phys. Rev. D 99, 123515 (2019)
+    """
+    return np.pi / 3 * (12.0 * ri**2 * delta_r + delta_r**3)
 
 
 def xiLS(N, Nr, dd_of_s, dr_of_s, rr_of_s):
