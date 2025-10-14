@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cosmo-utils = "lp_utils:main"
+cosmo-utils = "cosmo_utils:main"
 
 [build-system]
 requires = ["hatchling"]
