@@ -307,8 +307,11 @@ def check_correct_filtering(
         assert filtered_catalog[redshift_key].min() > zmin
 
 
-def read_test_file_and_plot(filepath):
-    samp_df = pl.read_parquet(filepath)
+def read_test_file_and_plot(filepath=None, df=None):
+    if filepath is not None:
+        samp_df = pl.read_parquet(filepath)
+    elif df is not None:
+        samp_df = df
     z = None
 
     for col1, col2 in [
@@ -316,6 +319,7 @@ def read_test_file_and_plot(filepath):
         ("RA", "DEC"),
         ("beta1", "beta2"),
         ("theta1", "theta2"),
+        ("ra_gal", "dec_gal"),
     ]:
 
         b1 = None
@@ -332,7 +336,7 @@ def read_test_file_and_plot(filepath):
             plt.ylabel(col2, fontsize=9)
             plt.tight_layout()
 
-    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z"]:
+    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z", "true_redshift_gal"]:
         if col3 in samp_df.columns:
             z = samp_df[col3]
             plt.figure(figsize=(8, 5))
