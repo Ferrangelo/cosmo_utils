@@ -80,7 +80,7 @@ class Cosmology:
             self.Omega_L = self.cosmo["Omega_DE"]
             self.Omega_DE = self.cosmo["Omega_DE"]
             self.Omega_k = self.cosmo["Omega_k"]
-            self.sigma8 = self.cosmo["sigma8"]
+            self.sigma8 = self.cosmo.get("sigma8")
             self.n_s = self.cosmo["n_s"]
             self.w = self.cosmo.get("w", -1.0)
             self.As = self.cosmo.get("As")
@@ -120,6 +120,7 @@ class Cosmology:
             "wmap5",
             "wmap7",
             "wmap9",
+            "fs2",
         ]
         if cosmology.lower() in list_of_cosmologies:
             cosmo_dict = self._read_cosmo_file(f"{cosmology}_cosmology.json")
@@ -162,7 +163,12 @@ class Cosmology:
             print(f"Loading power spectrum from {self.Pk_filename}")
             self.k, self.Pk = read_pk(self.Pk_filename)
             sigma8_computed = compute_sigma8(self.k, self.Pk)
-            if np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
+            if self.sigma8 is None:
+                self.sigma8 = sigma8_computed
+                self.P = self.Pk
+                print(f"\n--------- Set sigma8 from Pk ---------")
+                print(f"sigma8 = {self.sigma8:.8f}\n")
+            elif np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
                 self.P = self.Pk
             else:
                 print(
@@ -704,6 +710,13 @@ def change_sigma8(k, P, sigma8_wanted):
 
 
 def compute_sigma8(k, P_arr):
+    """
+    Compute sigma8 from P(k).
+    Parameters
+    ----------
+    k : array_like  Wavenumbers in h/Mpc.
+    P_arr : array_like  Power spectrum values in (Mpc/h)^3. 
+    """
     P_interp = interp1d(k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0)
 
     def integrand(k_):
