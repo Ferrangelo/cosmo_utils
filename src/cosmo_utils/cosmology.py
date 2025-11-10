@@ -34,7 +34,6 @@ class Cosmology:
     Omega_r : float  Radiation density parameter.
     Omega_m : float  Matter density parameter.
     Omega_DE : float  Dark energy density parameter.
-    Omega_L : float  Alias for Omega_DE.
     Omega_k : float  Curvature density parameter.
     h : float  Dimensionless Hubble parameter.
     sigma8 : float  RMS mass fluctuation amplitude at 8 Mpc/h.
@@ -77,12 +76,12 @@ class Cosmology:
             self.h = self.cosmo["h"]
             self.Omega_r = self.cosmo["Omega_r"]
             self.Omega_m = self.cosmo["Omega_m"]
-            self.Omega_L = self.cosmo["Omega_DE"]
             self.Omega_DE = self.cosmo["Omega_DE"]
             self.Omega_k = self.cosmo["Omega_k"]
             self.sigma8 = self.cosmo.get("sigma8")
             self.n_s = self.cosmo["n_s"]
             self.w = self.cosmo.get("w", -1.0)
+            self.wa = self.cosmo.get("wa", 0.0)
             self.As = self.cosmo.get("As")
             self.Pk_filename = self.cosmo.get("Pk_filename", None)
         else:
@@ -93,7 +92,6 @@ class Cosmology:
             self.Omega_r = Omega_r
             self.Omega_m = Omega_m
             self.Omega_DE = Omega_DE
-            self.Omega_L = Omega_DE
             self.Omega_k = Omega_k
             self.sigma8 = sigma8
             self.Pk_filename = Pk_filename
@@ -190,10 +188,13 @@ class Cosmology:
 
         Returns
         -------
-        float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_L).
+        float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{-3(1+wDE)}).
         """
+        # Effective dark energy equation of state using the CPL parametrization
+        wDE = self.w  + self.wa * z / (1 + z)
+
         return np.sqrt(
-            self.Omega_m * (1 + z) ** 3 + self.Omega_k * (1 + z) ** 2 + self.Omega_L
+            self.Omega_m * (1 + z) ** 3 + self.Omega_k * (1 + z) ** 2 + self.Omega_DE * (1 + z) ** (-3 * (1 + wDE))
         )
 
     def E_correct(self, z):
@@ -210,13 +211,16 @@ class Cosmology:
 
         Notes
         -----
-        E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_L).
+        E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{-3(1+wDE)}).
         """
+        # Effective dark energy equation of state using the CPL parametrization
+        wDE = self.w  + self.wa * z / (1 + z)
+
         return np.sqrt(
             self.Omega_r * (1 + z) ** 4
             + self.Omega_m * (1 + z) ** 3
             + self.Omega_k * (1 + z) ** 2
-            + self.Omega_L
+            + self.Omega_DE * (1 + z) ** (-3 * (1 + wDE)* (1+z)^{-3(1+wDE)})
         )
 
     def comoving_distance(self, z, h_units=True):
