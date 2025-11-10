@@ -38,7 +38,8 @@ class Cosmology:
     h : float  Dimensionless Hubble parameter.
     sigma8 : float  RMS mass fluctuation amplitude at 8 Mpc/h.
     n_s : float  Scalar spectral index (if available in preset).
-    w : float  Dark energy equation of state parameter (if available in preset).
+    w : float  Dark energy equation of state parameter (if available in preset) (corresponding to w_0 in CPL parametrization).
+    wa : float  Dark energy equation of state evolution parameter (if available in preset).
     As : float  Scalar amplitude (if available in preset).
     k : ndarray  Wavenumber array for the power spectrum (if Pk_filename is provided).
     Pk : ndarray  Power spectrum values from the file (if Pk_filename is provided).
@@ -164,7 +165,7 @@ class Cosmology:
             if self.sigma8 is None:
                 self.sigma8 = sigma8_computed
                 self.P = self.Pk
-                print(f"\n--------- Set sigma8 from Pk ---------")
+                print("\n--------- Set sigma8 from Pk ---------")
                 print(f"sigma8 = {self.sigma8:.8f}\n")
             elif np.isclose(sigma8_computed, self.sigma8, rtol=1e-6):
                 self.P = self.Pk
