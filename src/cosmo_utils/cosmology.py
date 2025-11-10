@@ -188,13 +188,17 @@ class Cosmology:
 
         Returns
         -------
-        float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{-3(1+wDE)}).
+        float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{3(1 + w0 + wa)} exp{-3 wa z / (1 + z)}).
         """
-        # Effective dark energy equation of state using the CPL parametrization
-        wDE = self.w  + self.wa * z / (1 + z)
+        # Use of the CPL parametrization
+        w0 = self.w0
+        wa = self.wa
 
         return np.sqrt(
-            self.Omega_m * (1 + z) ** 3 + self.Omega_k * (1 + z) ** 2 + self.Omega_DE * (1 + z) ** (-3 * (1 + wDE))
+            self.Omega_m * (1 + z) ** 3
+            + self.Omega_k * (1 + z) ** 2
+            + self.Omega_DE
+            * (1 + z) ** (3 * (1 + w0 + wa)) * np.exp(-3 * wa * z / (1 + z))
         )
 
     def E_correct(self, z):
@@ -211,16 +215,18 @@ class Cosmology:
 
         Notes
         -----
-        E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{-3(1+wDE)}).
+        E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{3(1 + w0 + wa)} exp{-3 wa z / (1 + z)}).
         """
-        # Effective dark energy equation of state using the CPL parametrization
-        wDE = self.w  + self.wa * z / (1 + z)
+        # Use of the CPL parametrization
+        w0 = self.w0
+        wa = self.wa
 
         return np.sqrt(
             self.Omega_r * (1 + z) ** 4
             + self.Omega_m * (1 + z) ** 3
             + self.Omega_k * (1 + z) ** 2
-            + self.Omega_DE * (1 + z) ** (-3 * (1 + wDE)* (1+z)^{-3(1+wDE)})
+            + self.Omega_DE
+            * (1 + z) ** (3 * (1 + w0 + wa)) * np.exp(-3 * wa * z / (1 + z))
         )
 
     def comoving_distance(self, z, h_units=True):
@@ -719,7 +725,7 @@ def compute_sigma8(k, P_arr):
     Parameters
     ----------
     k : array_like  Wavenumbers in h/Mpc.
-    P_arr : array_like  Power spectrum values in (Mpc/h)^3. 
+    P_arr : array_like  Power spectrum values in (Mpc/h)^3.
     """
     P_interp = interp1d(k, P_arr, kind="cubic", bounds_error=False, fill_value=0.0)
 
