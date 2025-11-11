@@ -113,6 +113,7 @@ class Cosmology:
         """
         list_of_cosmologies = [
             "raygal",
+            "raygal_wcdm",
             "istf",
             "wmap1",
             "wmap3",
