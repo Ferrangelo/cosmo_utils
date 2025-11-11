@@ -193,7 +193,7 @@ class Cosmology:
         float or ndarray  E(z) = sqrt(Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{3(1 + w0 + wa)} exp{-3 wa z / (1 + z)}).
         """
         # Use of the CPL parametrization
-        w0 = self.w0
+        w0 = self.w
         wa = self.wa
 
         return np.sqrt(
@@ -220,7 +220,7 @@ class Cosmology:
         E(z) = sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3 + Omega_k(1+z)^2 + Omega_DE * (1+z)^{3(1 + w0 + wa)} exp{-3 wa z / (1 + z)}).
         """
         # Use of the CPL parametrization
-        w0 = self.w0
+        w0 = self.w
         wa = self.wa
 
         return np.sqrt(
