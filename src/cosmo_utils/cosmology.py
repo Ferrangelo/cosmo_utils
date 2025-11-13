@@ -417,11 +417,37 @@ class Cosmology:
         xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
         return xi
 
-    def Pk2xiNL(self, s_arr, z=0, *args, **kwargs):
+    def Pk2xiNL(self, s_arr, z=0, rsd=False, *args, **kwargs):
+        """
+        Compute the nonlinear two-point correlation function xi(s) from a power spectrum P(k).
+
+        Parameters
+        ----------
+        s_arr : array_like
+            One-dimensional array of comoving separations s at which to evaluate xi(s).
+        z : float, optional
+            Redshift at which to evaluate the growth factor and any redshift-dependent
+            coefficient_form. Default is 0.
+        rsd : bool, optional
+            Reserved parameter for redshift-space distortion handling.
+        *args, **kwargs
+            Extra positional and keyword arguments are forwarded to
+            self.coefficient_form(z, rsd, *args, **kwargs) which then passes them to 
+            sigma0sq(self, z, rsd, b10=1.0, b01=0.0, sigma_p=0.0). These extra parameters
+            are b10, b01, sigma_p. b01 and sigma_p are only relevant if rsd=True.
+
+        Returns
+        -------
+        xi : numpy.ndarray
+            1D array of xi(s) values corresponding to the input s_arr. The computed array
+            has the same shape as s_arr. The returned xi(s) equals
+            4*pi * [D(z)]^2 * integral(...) where the integral is computed by
+            scipy.integrate.simpson over the self.k grid.
+        """
         def integrand(x, Px, r, xpiv=1):
             return (
                 x**2
-                * self.coefficient_form(z, *args, **kwargs)
+                * self.coefficient_form(z, rsd, *args, **kwargs)
                 * Px
                 / (2.0 * np.pi) ** 3
                 * j0(x * r)
@@ -435,11 +461,44 @@ class Cosmology:
         xi = 4 * np.pi * self.growth_factor(z) ** 2 * np.array(xi)
         return xi
 
-    def binned_xiNL(self, s_arr, delta_r, z=0, *args, **kwargs):
+    def binned_xiNL(self, s_arr, delta_r, z=0, rsd=False, *args, **kwargs):
+        """
+        Compute the binned non-linear two-point correlation function xi_NL(s).
+
+        This method computes a binned version of the non-linear correlation function
+        by integrating the (weighted) power spectrum against a bin-averaged
+        spherical Bessel kernel for each separation value in `s_arr`. The
+        integration over wavenumber k is performed with Simpson's rule.
+
+        Parameters
+        ----------
+        s_arr : array_like
+            One-dimensional array or scalar of separations (s) at which to evaluate
+            the binned correlation function. The returned array has the same shape
+            as `s_arr`. 
+        delta_r : float
+            Width of the radial bin used to compute the bin-averaged spherical
+            Bessel function j0_bar(r, delta_r). Must be positive.
+        z : float, optional
+            Redshift at which to evaluate the correlation function. Defaults to 0.
+        rsd : bool, optional
+            Reserved parameter for redshift-space distortion handling.
+        *args, **kwargs
+            Extra positional and keyword arguments are forwarded to
+            self.coefficient_form(z,rsd, *args, **kwargs) which then passes them to 
+            sigma0sq(self, z, rsd,  b10=1.0, b01=0.0, sigma_p=0.0). These extra parameters
+            are b10, b01, sigma_p. b01 and sigma_p are only relevant if rsd=True.
+
+        Returns
+        -------
+        xi : numpy.ndarray
+            Array of the same shape as `s_arr` containing the binned non-linear
+            correlation function xi_NL(s) evaluated at each input separation.
+        """
         def integrand(x, Px, r, xpiv=1):
             return (
                 x**2
-                * self.coefficient_form(z, *args, **kwargs)
+                * self.coefficient_form(z, rsd, *args, **kwargs)
                 * Px
                 / (2.0 * np.pi) ** 3
                 * j0_bar(x, r, delta_r)
@@ -492,32 +551,36 @@ class Cosmology:
     def dxi_ds(self, s_arr, z=0):
         return np.gradient(self.Pk2xi(s_arr, z), s_arr, edge_order=2)
 
-    def dxiNL_ds(self, s_arr, z=0, *args, **kwargs):
-        return np.gradient(self.Pk2xiNL(s_arr, z, *args, **kwargs), s_arr, edge_order=2)
+    def dxiNL_ds(self, s_arr, z=0, rsd=False, *args, **kwargs):
+        return np.gradient(self.Pk2xiNL(s_arr, z, rsd, *args, **kwargs), s_arr, edge_order=2)
 
-    def coefficient_form(self, z, *args, **kwargs):
+    def coefficient_form(self, z, rsd=False, *args, **kwargs):
         if len(args) >= 1:
             b10 = args[0]
         else:
             b10 = kwargs.get("b10", 1.0)
 
-        sigma0sq = self.sigma0sq(z, *args, **kwargs)
-        Asq = self.Asq(z, b10)
+        sigma0sq = self.sigma0sq(z, rsd, *args, **kwargs)
+        Asq = self.Asq(z, rsd, b10)
 
         return Asq * np.exp(-(self.k**2) * sigma0sq)
 
-    def Asq(self, z, b10=1.0):
-        f = self.growth_rate(z)
+    def Asq(self, z, rsd, b10=1.0):
+        f = self.growth_rate(z) if rsd else 0.0
         return b10**2 + 2 * b10 * f / 3 + f**2 / 5
 
     def sigma_v(self):
         return compute_sigma_v(self.k, self.P)
 
-    def sigma0sq(self, z, b10=1.0, b01=0.0, sigma_p=0.0):
+    def sigma0sq(self, z, rsd, b10=1.0, b01=0.0, sigma_p=0.0):
         D = self.growth_factor(z)
-        f = self.growth_rate(z)
+        f = self.growth_rate(z) if rsd else 0.0
         sigmav = self.sigma_v()
         sv = sigmav * D
+        
+        if not rsd:
+            b01 = 0.0
+            sigma_p = 0.0
 
         sigma0_sq = (
             -1
@@ -536,7 +599,7 @@ class Cosmology:
         )
         return sigma0_sq
 
-    def sigmaP2(self, k, z, ng, b10=1.0, rsd=True):
+    def sigmaP2(self, k, z, ng, b10=1.0, rsd=False):
         """
         Compute SigmaP2(k,z) for covariance integrals.
 
