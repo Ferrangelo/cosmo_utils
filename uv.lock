@@ -228,6 +228,19 @@ wheels = [
 ]
 
 [[package]]
+name = "colossus"
+version = "1.3.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "six" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/6a/0f740bb873ddc83714927cca4c00bcae556d58a03c67981e358ae7c3b83c/colossus-1.3.9-py2.py3-none-any.whl", hash = "sha256:ce2d5309ef244ba734772053f53019b2c25fcad75e97a0ef7349be68e2f44667", size = 198234 },
+]
+
+[[package]]
 name = "comm"
 version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -279,6 +292,41 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/0e/c8e4950c77dcfc897c71d61e56690a0a9df39543d2164040301b5df8e67b/contourpy-1.3.1-cp313-cp313t-win32.whl", hash = "sha256:8eb96e79b9f3dcadbad2a3891672f81cdcab7f95b27f28f1c67d75f045b6b4f1", size = 185117 },
     { url = "https://files.pythonhosted.org/packages/c1/31/1ae946f11dfbd229222e6d6ad8e7bd1891d3d48bde5fbf7a0beb9491f8e3/contourpy-1.3.1-cp313-cp313t-win_amd64.whl", hash = "sha256:287ccc248c9e0d0566934e7d606201abd74761b5703d804ff3df8935f523d546", size = 236668 },
 ]
+
+[[package]]
+name = "cosmo-utils"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "colossus" },
+    { name = "jupyter" },
+    { name = "matplotlib" },
+    { name = "mcfit" },
+    { name = "numpy" },
+    { name = "polars" },
+    { name = "pytest" },
+    { name = "scipy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "cosmo-utils" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "colossus", specifier = ">=1.3.9" },
+    { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "matplotlib", specifier = ">=3.10.1" },
+    { name = "mcfit", specifier = ">=0.0.22" },
+    { name = "numpy", specifier = ">=2.2.3" },
+    { name = "polars", specifier = ">=1.24.0" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "scipy", specifier = ">=1.15.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "cosmo-utils" }]
 
 [[package]]
 name = "cycler"
@@ -847,39 +895,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/d4/3c9735faa36ac591a4afcc2980d2691000506050b7a7e80bcfe44048daa7/kiwisolver-1.4.8-cp313-cp313t-musllinux_1_2_s390x.whl", hash = "sha256:577facaa411c10421314598b50413aa1ebcf5126f704f1e5d72d7e4e9f020d90", size = 2546710 },
     { url = "https://files.pythonhosted.org/packages/4c/fa/be89a49c640930180657482a74970cdcf6f7072c8d2471e1babe17a222dc/kiwisolver-1.4.8-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:be4816dc51c8a471749d664161b434912eee82f2ea66bd7628bd14583a833e85", size = 2349213 },
 ]
-
-[[package]]
-name = "lp-utils"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "jupyter" },
-    { name = "matplotlib" },
-    { name = "mcfit" },
-    { name = "numpy" },
-    { name = "polars" },
-    { name = "pytest" },
-    { name = "scipy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "lp-utils" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "jupyter", specifier = ">=1.1.1" },
-    { name = "matplotlib", specifier = ">=3.10.1" },
-    { name = "mcfit", specifier = ">=0.0.22" },
-    { name = "numpy", specifier = ">=2.2.3" },
-    { name = "polars", specifier = ">=1.24.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "scipy", specifier = ">=1.15.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "lp-utils", editable = "." }]
 
 [[package]]
 name = "markupsafe"
