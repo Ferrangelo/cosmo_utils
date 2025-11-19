@@ -15,66 +15,97 @@ from cosmo_utils.filters_et_functions import j0_bar
 
 class Cosmology:
     """
+    Cosmology
+    =========
     A class for handling cosmological calculations and parameters.
-    This class allows for the initialization of cosmological parameters either via a preset or by manual specification.
-    It provides methods for computing cosmological quantities such as comoving distances, growth factors, and cosmological volumes.
+    It provides methods for computing cosmological quantities (distances, growth, correlation functions, volumes, etc.).
+    Parameters may be loaded from a preset JSON file or supplied manually.
 
-    Parameters
-    ----------
-    preset : str, optional  Name of the preset cosmology to use. If provided, loads parameters from a corresponding JSON file.
-    Omega_r : float, optional  Radiation density parameter.
-    Omega_m : float, optional  Matter density parameter.
-    Omega_DE : float, optional  Dark energy density parameter.
-    Omega_k : float, optional  Curvature density parameter.
-    h : float, optional  Dimensionless Hubble parameter.
-    sigma8 : float, optional  RMS mass fluctuation amplitude at 8 Mpc/h.
-    Pk_filename : str, optional  Filename for the power spectrum data file.
+    Initialization Parameters
+    -------------------------
+    preset : str, optional
+        Name of a preset cosmology JSON (e.g. 'raygal', 'wmap9'). If given,
+        all needed parameters are loaded from file.
+    Omega_r : float, optional
+        Radiation density parameter. Required if preset is not used.
+    Omega_m : float, optional
+        Matter density parameter (cold + baryons). Required if preset is not used.
+    Omega_DE : float, optional
+        Dark energy density parameter. Required if preset is not used.
+    Omega_k : float, optional
+        Curvature density parameter. Required if preset is not used.
+    h : float, optional
+        Dimensionless Hubble parameter (H0 / 100 km /(s Mpc)). Required if no preset.
+    sigma8 : float, optional
+        RMS mass fluctuation in spheres of radius 8 Mpc/h. If omitted but a power
+        spectrum file is provided, it is computed from P(k).
+    n_s : float, optional
+        Scalar spectral index of the primordial power spectrum.
+    w : float, optional
+        CPL equation-of-state parameter w0 (default -1.0).
+    wa : float, optional
+        CPL evolution parameter wa (default 0.0).
+    Pk_filename : str, optional
+        Path to a power spectrum file to load k, P(k). Used to set / rescale sigma8.
 
-    Attributes
-    ----------
-    cosmo_id : str  Identifier for the chosen cosmology preset.
-    Omega_r : float  Radiation density parameter.
-    Omega_b : float  Baryon density parameter (if available in preset).
-    Omega_m : float  Matter density parameter.
-    Omega_DE : float  Dark energy density parameter.
-    Omega_k : float  Curvature density parameter.
-    h : float  Dimensionless Hubble parameter.
-    sigma8 : float  RMS mass fluctuation amplitude at 8 Mpc/h.
-    n_s : float  Scalar spectral index (if available in preset).
-    w : float  Dark energy equation of state parameter w_0 in CPL parametrization (default -1.0).
-    wa : float  Dark energy equation of state evolution parameter in CPL parametrization (default 0.0).
-    As : float  Scalar amplitude (if available in preset).
-    Pk_filename : str or None  Filename for the power spectrum (if provided).
-    k : ndarray  Wavenumber array for the power spectrum (if Pk_filename is provided).
-    Pk : ndarray  Power spectrum values from the file (if Pk_filename is provided).
-    P : ndarray  Power spectrum values, possibly rescaled to match sigma8 (if Pk_filename is provided).
+    Main Attributes
+    ---------------
+    cosmo_id : str
+        Identifier for the chosen preset (if any).
+    Omega_r, Omega_m, Omega_DE, Omega_k : float
+        Density parameters at z=0.
+    Omega_b : float or None
+        Baryon density (from preset if available).
+    h : float
+        Dimensionless Hubble parameter.
+    sigma8 : float
+        Normalization of matter fluctuations (after optional rescaling).
+    n_s : float
+        Spectral index.
+    w, wa : float
+        Dark energy CPL parameters.
+    k : ndarray or None
+        Wavenumber grid (h/Mpc) from the loaded power spectrum.
+    Pk : ndarray or None
+        Original loaded power spectrum values.
+    P : ndarray or None
+        Possibly rescaled power spectrum consistent with target sigma8.
+    As : float or None
+        Primordial amplitude if present in preset.
 
-    Methods
-    -------
-    choose_cosmo(cosmology) : Loads cosmological parameters from a preset JSON file.
-    set_pk() : Sets the power spectrum based on the provided Pk_filename.
-    E_late_times(z) : Computes the dimensionless Hubble parameter E(z) for late times (ignoring radiation).
-    E_correct(z) : Computes the dimensionless Hubble parameter E(z) including radiation.
-    comoving_distance(z, h_units=True) : Calculates the comoving distance to redshift z, optionally in units of Mpc/h.
-    comoving_distance_late_times(z, h_units=True) : Calculates the comoving distance to redshift z using late-time approximation.
-    comoving_distance_interp(use_late_times=False, z_vals=None) : Returns an interpolator for comoving distance as a function of redshift.
-    growth_factor(z_input, force_flat_lcdm_formula=False, force_use_colossus=False) :  Computes the linear growth factor D(z) at given redshift(s).
-    d_dz_growth_factor(z_input) : Computes the derivative of the linear growth factor D(z) with respect to redshift.
-    growth_rate(z_input) : Computes the linear growth rate f(z) at given redshift(s).
-    volume_zbin(zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None) : Computes the comoving volume between two redshifts.
-    get_vol_interp(zmin=0, zmax=2.5, fsky=None, solid_angle=None, z_vals=None) : Returns an interpolator for comoving volume vs redshift.
-    find_z_for_target_volume(volume_target, fsky, z_min=0, z_max=2, z_vals=None) : Finds redshift for a target comoving volume.
-    Pk2xi(s_arr, z=0) : Computes the linear two-point correlation function xi(s) from the power spectrum.
-    Pk2xiNL(s_arr, z=0, rsd=False, *args, **kwargs) : Computes the nonlinear (Zeldovich approximation) two-point correlation function xi(s) from the power spectrum.
-    binned_xiNL(s_arr, delta_r, z=0, rsd=False, *args, **kwargs) : Computes the binned nonlinear two-point correlation function.
-    Pk2d_xi_ds(s_arr, z=0) : Computes the derivative of xi(s) with respect to s from P(k).
-    dxi_ds(s_arr, z=0) : Computes the derivative of xi(s) with respect to s using numerical gradient.
-    dxiNL_ds(s_arr, z=0, rsd=False, *args, **kwargs) : Computes the derivative of xiNL(s) with respect to s using numerical gradient.
-    coefficient_form(z, rsd=False, *args, **kwargs) : Computes the nonlinear coefficient form for power spectrum transformation (Same name of Stefano's notebooks).
-    Asq(z, rsd, b10=1.0) : Computes the amplitude squared for nonlinear corrections.
-    sigma_v() : Computes the velocity dispersion sigma_v from the power spectrum.
-    sigma0sq(z, rsd, b10=1.0, b01=0.0, sigma_p=0.0) : Computes sigma0 squared for nonlinear corrections.
-    sigmaP2(k, z, ng, b10=1.0, rsd=False) : Computes SigmaP2(k,z) for covariance integrals.
+    Key Methods (see individual docstrings for details)
+    ---------------------------------------------------
+    choose_cosmo(cosmology)      Load preset parameters from JSON.
+    set_pk()                     Load and (if needed) rescale P(k) to match sigma8.
+    E_late_times(z)              Hubble function E(z) without radiation.
+    E_correct(z)                 Full E(z) including radiation.
+    comoving_distance(z)         Comoving distance.
+    comoving_distance_interp(...) Interpolator for comoving distance.
+    growth_factor(z, ...)        Linear growth factor D(z), normalized at z=0.
+    d_dz_growth_factor(z)        Derivative dD/dz.
+    growth_rate(z)               Linear growth rate f(z) = d ln D / d ln a.
+    volume_zbin(zi, zf, ...)     Comoving volume between two redshifts, given a solid angle.
+    get_vol_interp(...)          Interpolator for cumulative comoving volume.
+    find_z_for_target_volume(...) Invert volume(z) for a target value.
+    Pk2xi(s, z)                  Linear two-point correlation function monopole xi(s).
+    Pk2xiNL(s, ...)              Non-linear (Zel'dovich) xi(s).
+    binned_xiNL(s, Δr, ...)      Bin-averaged non-linear xi(s).
+    Pk2d_xi_ds(s, z)             Derivative dxi/ds via direct integral.
+    dxi_ds(s, z)                 Numerical gradient of xi(s).
+    dxiNL_ds(s, ...)             Numerical gradient of non-linear xi(s).
+    coefficient_form(z, ...)     Non-linear damping / bias coefficient factor.
+    Asq(z, rsd, b10)             Amplitude-squared factor including RSD.
+    sigma_v()                    Velocity dispersion from P(k).
+    sigma0sq(z, ...)             Non-linear damping scale.
+    sigmaP2(k, z, ng, ...)       Auxiliary integral for covariance calculations.
+
+    Notes
+    -----
+    - Distances use integrals of 1/E(z); radiation is optional via E_correct.
+    - Growth factor defaults to an analytic flat LCDM formula when applicable,
+      otherwise Colossus (if installed) is used for the full computation.
+    - Power spectrum dependent quantities require Pk_filename to be set.
+    - All correlation-function integrals assume k, P are in h/Mpc and (Mpc/h)^3.
     """
 
     def __init__(
@@ -86,9 +117,9 @@ class Cosmology:
         Omega_k=None,
         h=None,
         sigma8=None,
-        n_s = None,
-        w = -1.0,
-        wa = 0.0,
+        n_s=None,
+        w=-1.0,
+        wa=0.0,
         Pk_filename=None,
     ):
         if preset is not None:
@@ -209,10 +240,12 @@ class Cosmology:
             self.k = None
             self.Pk = None
             self.P = None
-            
+
     def _require_pk(self):
         if self.k is None or self.P is None:
-            raise RuntimeError("Power spectrum not loaded: set Pk_filename or call set_pk() first.")
+            raise RuntimeError(
+                "Power spectrum not loaded: set Pk_filename or call set_pk() first."
+            )
 
     def _colossus_key_and_kwargs(self):
         """
@@ -468,14 +501,12 @@ class Cosmology:
         else:
             redshift_array = np.linspace(0.0, 2.5, 4000)
             return self._d_dz_growth_factor_impl(z_input, redshift_array)
-    
 
     def _d_dz_growth_factor_impl(self, z_eval, z_arr):
         """
         Compute numerical derivative dD/dz of the growth factor instead of using the flat LCDM formula
         """
-        dD_dz = np.gradient(
-            self.growth_factor(z_arr), z_arr, edge_order=2)
+        dD_dz = np.gradient(self.growth_factor(z_arr), z_arr, edge_order=2)
 
         dD_dz_interp = interp1d(z_arr, dD_dz, kind="cubic")
         return dD_dz_interp(z_eval)
@@ -496,7 +527,6 @@ class Cosmology:
             Dz = self.growth_factor(z)
             d_dz_Dz = self.d_dz_growth_factor(z)
             return -d_dz_Dz / (a * Dz)
-            
 
     def volume_zbin(
         self, zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None
@@ -587,6 +617,7 @@ class Cosmology:
 
     def Pk2xi(self, s_arr, z=0):
         self._require_pk()
+
         def integrand(x, Px, r, xpiv=1):
             return x**2 * Px / (2.0 * np.pi) ** 3 * j0(x * r) * wgc(x, xpiv, 4)
 
@@ -626,6 +657,7 @@ class Cosmology:
         """
 
         self._require_pk()
+
         def integrand(x, Px, r, xpiv=1):
             return (
                 x**2
@@ -1001,16 +1033,18 @@ def compute_sigma_v(k, P):
     integral, _ = quad(integrand, 0.001, 5, epsabs=0, epsrel=1e-8, limit=200)
     return np.sqrt(4.0 * np.pi / 3.0 * integral)
 
+
 def _set_gf(z=0, Om=0.3, cosmo_obj: Optional[Cosmology] = None):
-    if cosmo_obj is not None: 
+    if cosmo_obj is not None:
         return cosmo_obj.growth_factor(z)
-    else: 
+    else:
         return growth_factor_flat_lcdm(z, Om)
 
+
 def _set_gr(z=0, Om=0.3, cosmo_obj: Optional[Cosmology] = None):
-    if cosmo_obj is not None: 
+    if cosmo_obj is not None:
         return cosmo_obj.growth_rate(z)
-    else: 
+    else:
         return growth_rate_flat_lcdm(z, Om)
 
 
@@ -1024,7 +1058,7 @@ def Pk2xi(k, Pk, s_arr, z=0, Om=0.3, cosmo_obj: Optional[Cosmology] = None):
     xi = []
     for si in s_arr:
         xi.append(integrate.simpson(integrand(k, Pk, si), k))
-    xi = 4 * np.pi * gf ** 2 * np.array(xi)
+    xi = 4 * np.pi * gf**2 * np.array(xi)
     return xi
 
 
@@ -1068,7 +1102,7 @@ def Pk2d_xi_ds(k, Pk, s_arr, z=0, Om=0.3, cosmo_obj: Optional[Cosmology] = None)
     for si in s_arr:
         val, _ = quad(lambda x: integrand(x, Px_interp, si), 0.001, 100, limit=200)
         dxi.append(val)
-    dxi = 4 * np.pi * gf ** 2 * np.array(dxi)
+    dxi = 4 * np.pi * gf**2 * np.array(dxi)
 
     return dxi
 
@@ -1086,7 +1120,16 @@ def Asq(z, Om=0.3, b10=1.0, cosmo_obj: Optional[Cosmology] = None):
     return b10**2 + 2 * b10 * f / 3 + f**2 / 5
 
 
-def sigma0sq(z, k_arr, P_arr, Om=0.3, b10=1.0, b01=0.0, sigma_p=0.0,cosmo_obj: Optional[Cosmology] = None):
+def sigma0sq(
+    z,
+    k_arr,
+    P_arr,
+    Om=0.3,
+    b10=1.0,
+    b01=0.0,
+    sigma_p=0.0,
+    cosmo_obj: Optional[Cosmology] = None,
+):
     D = _set_gf(z, Om, cosmo_obj)
     f = _set_gr(z, Om, cosmo_obj)
     if cosmo_obj is not None:
