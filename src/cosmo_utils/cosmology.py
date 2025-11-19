@@ -27,20 +27,23 @@ class Cosmology:
     Omega_k : float, optional  Curvature density parameter.
     h : float, optional  Dimensionless Hubble parameter.
     sigma8 : float, optional  RMS mass fluctuation amplitude at 8 Mpc/h.
-    Pk_filename : str or None  Filename for the power spectrum (if available in preset).
+    Pk_filename : str, optional  Filename for the power spectrum data file.
 
     Attributes
     ----------
+    cosmo_id : str  Identifier for the chosen cosmology preset.
     Omega_r : float  Radiation density parameter.
+    Omega_b : float  Baryon density parameter (if available in preset).
     Omega_m : float  Matter density parameter.
     Omega_DE : float  Dark energy density parameter.
     Omega_k : float  Curvature density parameter.
     h : float  Dimensionless Hubble parameter.
     sigma8 : float  RMS mass fluctuation amplitude at 8 Mpc/h.
     n_s : float  Scalar spectral index (if available in preset).
-    w : float  Dark energy equation of state parameter (if available in preset) (corresponding to w_0 in CPL parametrization).
-    wa : float  Dark energy equation of state evolution parameter (if available in preset).
+    w : float  Dark energy equation of state parameter w_0 in CPL parametrization (default -1.0).
+    wa : float  Dark energy equation of state evolution parameter in CPL parametrization (default 0.0).
     As : float  Scalar amplitude (if available in preset).
+    Pk_filename : str or None  Filename for the power spectrum (if provided).
     k : ndarray  Wavenumber array for the power spectrum (if Pk_filename is provided).
     Pk : ndarray  Power spectrum values from the file (if Pk_filename is provided).
     P : ndarray  Power spectrum values, possibly rescaled to match sigma8 (if Pk_filename is provided).
@@ -48,18 +51,31 @@ class Cosmology:
     Methods
     -------
     choose_cosmo(cosmology)  Loads cosmological parameters from a preset JSON file.
+    set_pk()  Sets the power spectrum based on the provided Pk_filename.
     E_late_times(z)  Computes the dimensionless Hubble parameter E(z) for late times (ignoring radiation).
     E_correct(z)  Computes the dimensionless Hubble parameter E(z) including radiation.
     comoving_distance(z, h_units=True)  Calculates the comoving distance to redshift z, optionally in units of Mpc/h.
     comoving_distance_late_times(z, h_units=True)  Calculates the comoving distance to redshift z using late-time approximation.
     comoving_distance_interp(use_late_times=False, z_vals=None)  Returns an interpolator for comoving distance as a function of redshift.
-    growth_factor(z_input)  Computes the linear growth factor D(z) at given redshift(s).
+    growth_factor(z_input, force_flat_lcdm_formula=False, force_use_colossus=False)  Computes the linear growth factor D(z) at given redshift(s).
     d_dz_growth_factor(z_input)  Computes the derivative of the linear growth factor D(z) with respect to redshift.
     growth_rate(z_input)  Computes the linear growth rate f(z) at given redshift(s).
     volume_zbin(zi, zf, fsky=None, solid_angle=None, use_late_times=False, z_vals=None)  Computes the comoving volume between two redshifts.
     get_vol_interp(zmin=0, zmax=2.5, fsky=None, solid_angle=None, z_vals=None)  Returns an interpolator for comoving volume vs redshift.
     find_z_for_target_volume(volume_target, fsky, z_min=0, z_max=2, z_vals=None)  Finds redshift for a target comoving volume.
+    Pk2xi(s_arr, z=0)  Computes the linear two-point correlation function xi(s) from the power spectrum.
+    Pk2xiNL(s_arr, z=0, rsd=False, *args, **kwargs)  Computes the nonlinear (Zeldovich approximation) two-point correlation function xi(s) from the power spectrum.
+    binned_xiNL(s_arr, delta_r, z=0, rsd=False, *args, **kwargs)  Computes the binned nonlinear two-point correlation function.
+    Pk2d_xi_ds(s_arr, z=0)  Computes the derivative of xi(s) with respect to s from P(k).
+    dxi_ds(s_arr, z=0)  Computes the derivative of xi(s) with respect to s using numerical gradient.
+    dxiNL_ds(s_arr, z=0, rsd=False, *args, **kwargs)  Computes the derivative of xiNL(s) with respect to s using numerical gradient.
+    coefficient_form(z, rsd=False, *args, **kwargs)  Computes the nonlinear coefficient form for power spectrum transformation (Same name of Stefano's notebooks).
+    Asq(z, rsd, b10=1.0)  Computes the amplitude squared for nonlinear corrections.
+    sigma_v()  Computes the velocity dispersion sigma_v from the power spectrum.
+    sigma0sq(z, rsd, b10=1.0, b01=0.0, sigma_p=0.0)  Computes sigma0 squared for nonlinear corrections.
+    sigmaP2(k, z, ng, b10=1.0, rsd=False)  Computes SigmaP2(k,z) for covariance integrals.
     """
+
 
     def __init__(
         self,
@@ -73,9 +89,11 @@ class Cosmology:
         Pk_filename=None,
     ):
         if preset is not None:
+            self.cosmo_id = preset
             self.cosmo = self.choose_cosmo(preset)
             self.h = self.cosmo["h"]
             self.Omega_r = self.cosmo["Omega_r"]
+            self.Omega_b = self.cosmo.get("Omega_b")
             self.Omega_m = self.cosmo["Omega_m"]
             self.Omega_DE = self.cosmo["Omega_DE"]
             self.Omega_k = self.cosmo["Omega_k"]
@@ -301,11 +319,99 @@ class Cosmology:
         distance_cubic_interp = interp1d(z_vals, dist_vals, kind="cubic")
         return distance_cubic_interp
 
-    def growth_factor(self, z_input):
+    def growth_factor(self, z_input, force_flat_lcdm_formula=False, force_use_colossus=False):
         """
         Wrapper for _growth_factor_impl. See _growth_factor_impl docstring for details.
         """
-        return _growth_factor_impl(z_input, self.Omega_m)
+        if force_flat_lcdm_formula:
+            return _growth_factor_lcdm_impl(z_input, self.Omega_m)
+        elif force_use_colossus:
+            return self._growth_factor_impl(z_input)
+        elif np.isclose(self.w, -1.0) and np.isclose(self.wa, 0.0) and np.isclose(self.Omega_k, 0.0):
+            return _growth_factor_lcdm_impl(z_input, self.Omega_m)
+        else:
+            return self._growth_factor_impl(z_input)
+   
+    def _growth_factor_impl(self, z_eval):
+        """
+        Compute exact normalized growth factor D(z) using Colossus for the current cosmology.
+
+        Notes:
+        - Requires a baryon density Omega_b to build the Colossus cosmology.
+        - Returns D(z) normalized to z=0 (same convention as Colossus.growthFactor).
+        """
+        try:
+            from colossus.cosmology import cosmology as col_cosmo
+        except ImportError as e:
+            raise ImportError(
+                "Colossus is required for exact growth factor. Install with `pip install colossus` "
+                "or add it to PYTHONPATH."
+            ) from e
+
+        # Gather parameters for Colossus
+        Om0 = self.Omega_m
+        H0 = 100.0 * self.h
+        ns = self.n_s
+        sigma8 = self.sigma8
+        w0 = self.w 
+        wa = self.wa
+
+        # Baryon density is required by Colossus
+        Ob0 = getattr(self, "Omega_b", None)
+        if Ob0 is None and hasattr(self, "cosmo") and isinstance(self.cosmo, dict):
+            Ob0 = self.cosmo.get("Omega_b", None)
+        if Ob0 is None:
+            print("Omega_b0 (baryon density) is required for Colossus to instantiate a cosmology.")
+            print("Making up a value of Omega_b0 = 0.05, as it does not affect the computation of the growth factor.")
+            Ob0 = 0.05
+
+        Ob0 = float(Ob0)
+
+        flat = bool(abs(self.Omega_k) < 1e-12)
+        Ode0 = None if flat else float(self.Omega_DE)
+
+        # Choose Colossus DE model
+        if np.isclose(w0, -1.0) and np.isclose(wa, 0.0):
+            de_model = "lambda"
+            w0_arg, wa_arg = None, None
+        elif np.isclose(wa, 0.0):
+            de_model = "w0"
+            w0_arg, wa_arg = float(w0), None
+        else:
+            de_model = "w0wa"
+            w0_arg, wa_arg = float(w0), float(wa)
+
+        # Build or reuse a Colossus cosmology object (simple cache)
+        key = (
+            flat, Om0, Ode0, Ob0, H0, sigma8, ns,
+            de_model, w0_arg, wa_arg
+        )
+        cache_ok = hasattr(self, "_colossus_cache") and self._colossus_cache.get("key") == key
+        if not cache_ok:
+            kwargs = dict(
+                name="cosmo_utils_tmp",
+                flat=flat, Om0=Om0, Ob0=Ob0, H0=H0,
+                sigma8=sigma8, ns=ns,
+                de_model=de_model,
+                interpolation=True,
+                # Avoid disk persistence to keep things local to the session
+                persistence='',
+                print_info=False, print_warnings=False,
+            )
+            if not flat:
+                kwargs["Ode0"] = Ode0
+            if w0_arg is not None:
+                kwargs["w0"] = w0_arg
+            if wa_arg is not None:
+                kwargs["wa"] = wa_arg
+
+            col = col_cosmo.Cosmology(**kwargs)
+            self._colossus_cache = {"key": key, "obj": col}
+        else:
+            col = self._colossus_cache["obj"]
+
+        return col.growthFactor(z_eval)
+
 
     def d_dz_growth_factor(self, z_input):
         """
@@ -664,8 +770,7 @@ def bacco_params(cosmo_dict, expfactor=1):
 
     return bacco_dict
 
-
-def _growth_factor_impl(z, Om):
+def _growth_factor_lcdm_impl(z, Om):
     """
     Linear growth factor D(z), normalized at z=0.
 
