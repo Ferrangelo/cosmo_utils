@@ -486,7 +486,12 @@ class Cosmology:
         - Returns D(z) normalized to z=0 (same convention as Colossus.growthFactor).
         """
         col = self.get_colossus_cosmology()
-        return col.growthFactor(z_eval)
+        z_arr = np.atleast_1d(z_eval)
+        if z_arr.size == 1:
+            return float(col.growthFactor(z_arr[0]))
+        
+        D_arr = np.array([col.growthFactor(z) for z in z_arr], dtype=np.float64)
+        return D_arr
 
     def d_dz_growth_factor(self, z_input):
         """
