@@ -329,14 +329,14 @@ def read_test_file_and_plot(filepath=None, df=None):
             b2 = samp_df[col2]
 
         if b1 is not None:
-            plt.figure(figsize=(3, 3))
+            plt.figure(figsize=(5, 5))
             plt.scatter(b1, b2, s=0.1)
             plt.title("Angles distribution")
             plt.xlabel(col1, fontsize=9)
             plt.ylabel(col2, fontsize=9)
             plt.tight_layout()
 
-    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z", "true_redshift_gal"]:
+    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z", "true_redshift_gal", "Z"]:
         if col3 in samp_df.columns:
             z = samp_df[col3]
             plt.figure(figsize=(8, 5))
