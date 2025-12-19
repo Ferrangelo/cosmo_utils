@@ -1025,7 +1025,7 @@ def compute_sigma8(k, P_arr):
     def integrand(k_):
         return P_interp(k_) / (2.0 * np.pi) ** 3 * top_hat_filter(k_, 8) ** 2 * k_**2
 
-    integral, _ = quad(integrand, 0.000001, 5, epsabs=0, epsrel=1e-8, limit=200)
+    integral, _ = quad(integrand, 0.000001, 5, epsrel=1e-8, limit=200)
     return np.sqrt(4.0 * np.pi * integral)
 
 
@@ -1035,7 +1035,7 @@ def compute_sigma_v(k, P):
     def integrand(k):
         return P_interp(k) / (2.0 * np.pi) ** 3
 
-    integral, _ = quad(integrand, 0.001, 5, epsabs=0, epsrel=1e-8, limit=200)
+    integral, _ = quad(integrand, 0.001, 5, epsrel=1e-8, limit=200)
     return np.sqrt(4.0 * np.pi / 3.0 * integral)
 
 
