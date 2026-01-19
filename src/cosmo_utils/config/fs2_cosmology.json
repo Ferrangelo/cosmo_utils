@@ -1,0 +1,14 @@
+{
+    "h": 0.67,
+    "Omega_m": 0.319,
+    "Omega_b": 0.049,
+    "Omega_r": 0.00005509,
+    "Omega_k": 0.0,
+    "Omega_DE": 0.67954148,
+    "Omega_mu": 0.00140343,
+    "w": -1.0000000,
+    "n_s": 0.96,
+    "As":2.1e-9,
+    "sigma8_approx": 0.8013,
+    "Pk_filename": "FS2_matterpower_z0p0.dat"
+}
