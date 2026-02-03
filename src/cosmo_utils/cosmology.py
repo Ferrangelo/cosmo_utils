@@ -635,7 +635,7 @@ class Cosmology:
 
     def Pk2xiNL(self, s_arr, z=0, rsd=False, *args, **kwargs):
         """
-        Compute the nonlinear two-point correlation function xi(s) from a power spectrum P(k).
+        Compute the nonlinear (Zeldovich approximation) two-point correlation function xi(s) from a power spectrum P(k).
 
         Parameters
         ----------
