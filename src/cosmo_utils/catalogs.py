@@ -336,7 +336,7 @@ def read_test_file_and_plot(filepath=None, df=None):
             plt.ylabel(col2, fontsize=12)
             plt.tight_layout()
 
-    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z", "true_redshift_gal", "Z"]:
+    for col3 in ["d_or_z", "z0", "z1", "z2", "z3", "z4", "z5", "zrsd", "z", "true_redshift_gal", "observed_redshift_gal", "Z"]:
         if col3 in samp_df.columns:
             z = samp_df[col3]
             plt.figure(figsize=(8, 5))
